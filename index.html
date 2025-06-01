@@ -203,22 +203,19 @@
     #jailBarsOverlay.active { display: flex; }
 
     .jail-bar {
-      /* === MODIFIED STYLES FOR THINNER, SILVER BARS === */
       background-color: #c0c0c0; /* Silver color */
       border: 1px solid #888888;   /* Darker silver/grey border */
       width: 6%;                  /* Make bars thinner */
-      /* === END OF MODIFIED STYLES === */
-      height: 0%; /* Starts with no height for the animation */
+      height: 0%; 
       animation: dropJailBar 0.6s forwards ease-in-out;
-      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+      box-sizing: border-box; 
     }
-    /* Stagger the animation for a cooler effect */
     .jail-bar:nth-child(1) { animation-delay: 0s; }
     .jail-bar:nth-child(2) { animation-delay: 0.05s; }
     .jail-bar:nth-child(3) { animation-delay: 0.1s; }
     .jail-bar:nth-child(4) { animation-delay: 0.15s; }
     .jail-bar:nth-child(5) { animation-delay: 0.2s; }
-    .jail-bar:nth-child(6) { animation-delay: 0.25s; }
+    .jail-bar:nth-child(6) { animation-delay: 0.25s; } 
     .jail-bar:nth-child(7) { animation-delay: 0.3s; }
 
     @keyframes dropJailBar {
@@ -226,7 +223,6 @@
       to   { height: 100%; transform: translateY(0); }
     }
 
-    /* Power-up specific styles */
     .powerup-icon {
         border: 3px solid gold !important;
         box-shadow: 0 0 10px gold;
@@ -267,16 +263,15 @@
   <audio id="comboSound" src="YOUR_COMBO_SOUND.mp3"></audio>
   <audio id="jailBarSound" src="YOUR_JAIL_BAR_SLAM_SOUND.mp3"></audio>
 
-
   <button id="startButton">Start Game</button>
   <button id="showInstructionsButton">How to Play</button>
 
   <div id="instructionModal">
     <div id="instructionModalContent">
       <h2>How to Play Taylan's Game!</h2>
-      <p>Help Stacey collect... items... by clicking her image before time runs out!
+      <p>Help Stacey collect... items... by clicking her image before time runs out! The items will move, so be quick!
       Each click on Stacey earns points and builds your combo for bigger scores.
-      Avoid Officer Jake at all costs - clicking him means Game Over!
+      Avoid Officer Jake at all costs - clicking him means Game Over! Jake moves too!
       Watch out for Innocent Bystanders too; clicking them will cost you points.
       Grab Power-Ups for special boosts!</p>
       <button id="closeInstructionsButton">Got It!</button>
@@ -296,7 +291,7 @@
     const activePowerUpsDisplay = document.getElementById('activePowerUpsDisplay');
 
     const music = document.getElementById('gameMusic');
-    const gameOverSoundEffect = document.getElementById('gameOverSound'); // Renamed to avoid conflict
+    const gameOverSoundEffect = document.getElementById('gameOverSound');
     const staceyClickSfx = document.getElementById('staceyClickSound');
     const jakePenaltySfx = document.getElementById('jakePenaltySound');
     const powerUpSfx = document.getElementById('powerUpSound');
@@ -308,33 +303,35 @@
     const closeInstructionsButton = document.getElementById('closeInstructionsButton');
     const jailBarsOverlay = document.getElementById('jailBarsOverlay');
 
-    const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg'; // This URL seems okay when checked
+    const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg';
     const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg';
-    const bystanderURL = 'YOUR_BYSTANDER_IMAGE.png'; // Placeholder
-    const timePowerUpURL = 'YOUR_TIME_POWERUP_IMAGE.png'; // Placeholder (e.g., a clock icon)
-    const scorePowerUpURL = 'YOUR_SCORE_POWERUP_IMAGE.png'; // Placeholder (e.g., a star icon)
+    const bystanderURL = 'YOUR_BYSTANDER_IMAGE.png';
+    const timePowerUpURL = 'YOUR_TIME_POWERUP_IMAGE.png';
+    const scorePowerUpURL = 'YOUR_SCORE_POWERUP_IMAGE.png';
 
     const gameSettings = {
         initialTime: 30,
-        baseSpawnInterval: 950, // ms
-        minSpawnInterval: 400,  // Fastest spawn
-        jakeBaseProb: 0.20,     // Initial probability of Jake
-        jakeMaxProb: 0.40,      // Max probability of Jake
-        powerUpProb: 0.10,      // Chance an item is a power-up
-        bystanderProb: 0.15,    // Chance an item is a bystander (after not being Jake/PowerUp)
+        baseSpawnInterval: 950, 
+        minSpawnInterval: 400,  
+        jakeBaseProb: 0.20,     
+        jakeMaxProb: 0.40,      
+        powerUpProb: 0.10,      
+        bystanderProb: 0.15,    
         pointsPerStacey: 5,
         comboBonusMultiplier: 2,
         bystanderPenalty: 10,
-        timePowerUpValue: 5,    // seconds
-        scorePowerUpDuration: 5000, // ms
+        timePowerUpValue: 5,    
+        scorePowerUpDuration: 5000, 
         scorePowerUpMultiplier: 2,
-        difficultyScoreThreshold: 100, // Score interval to increase difficulty
+        difficultyScoreThreshold: 100, 
+        itemBaseSpeed: 1.5, // Base speed for items (pixels per frame)
+        itemSpeedVariance: 1 // Max additional random speed
     };
 
     let score = 0;
     let highScore = 0;
     let timeLeft = gameSettings.initialTime;
-    let gameInterval, spawnIntervalId; 
+    let gameInterval, spawnIntervalId, animationIntervalId; // Added animationIntervalId
     let gameActive = false;
     let hitJakeInGameOver = false; 
 
@@ -352,9 +349,8 @@
     let activeScoreMultiplier = 1;
     let scoreMultiplierTimeout;
 
-    // --- Utility Functions ---
     function playSound(soundElement) {
-        if (soundElement && soundElement.src && soundElement.src !== window.location.href && !soundElement.src.endsWith('null') && !soundElement.src.endsWith('undefined')) { // Check if src is valid and not a placeholder ending
+        if (soundElement && soundElement.src && soundElement.src !== window.location.href && !soundElement.src.endsWith('null') && !soundElement.src.endsWith('undefined')) {
             soundElement.currentTime = 0;
             soundElement.play().catch(error => console.warn("Audio play error:", error.message, soundElement.src));
         }
@@ -365,8 +361,13 @@
         popup.textContent = (value > 0 ? '+' : '') + value;
         popup.className = 'score-popup';
         popup.style.color = value > 0 ? 'gold' : 'red';
-        popup.style.left = (element.offsetLeft + element.offsetWidth / 2 - 15) + 'px';
-        popup.style.top = (element.offsetTop - 10) + 'px';
+        
+        // Position popup relative to the clicked item's current position
+        const itemRect = element.getBoundingClientRect();
+        const gameAreaRect = gameArea.getBoundingClientRect();
+        popup.style.left = (itemRect.left - gameAreaRect.left + element.offsetWidth / 2 - 15) + 'px';
+        popup.style.top = (itemRect.top - gameAreaRect.top - 10) + 'px';
+
         gameArea.appendChild(popup);
         setTimeout(() => {
             if (popup.parentNode) popup.remove();
@@ -381,7 +382,6 @@
         activePowerUpsDisplay.innerHTML = displayHTML;
     }
 
-    // --- Instruction Modal Logic ---
     function showInstructions() {
       instructionModal.style.display = 'flex';
       startButton.disabled = true;
@@ -402,7 +402,6 @@
     closeInstructionsButton.addEventListener('click', hideInstructions);
     showInstructionsButton.addEventListener('click', showInstructions);
 
-    // --- High Score Logic ---
     function loadHighScore() {
         highScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
         highScoreDisplay.textContent = highScore;
@@ -415,7 +414,6 @@
         }
     }
 
-    // --- Game Difficulty Scaling ---
     function updateDifficulty() {
         const difficultyFactor = Math.floor(score / gameSettings.difficultyScoreThreshold);
         currentSpawnInterval = Math.max(gameSettings.minSpawnInterval, gameSettings.baseSpawnInterval - difficultyFactor * 50);
@@ -427,7 +425,49 @@
         }
     }
 
-    // --- Item Spawning Logic ---
+    // --- NEW: Function to update item positions ---
+    function updateItemPositions() {
+        if (!gameActive) return;
+        const items = gameArea.querySelectorAll('.item-face');
+        const gameAreaWidth = gameArea.clientWidth;
+        const gameAreaHeight = gameArea.clientHeight;
+
+        items.forEach(item => {
+            // Skip items that have been clicked (dx/dy will be set to 0) or are part of an animation that shouldn't move
+            if (item.dx === 0 && item.dy === 0) return;
+            if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return; // Not yet fully initialized for movement
+
+            let currentX = parseFloat(item.style.left);
+            let currentY = parseFloat(item.style.top);
+            const itemWidth = item.offsetWidth;
+            const itemHeight = item.offsetHeight;
+
+            currentX += item.dx;
+            currentY += item.dy;
+
+            // Bounce off walls
+            if (currentX <= 0) {
+                currentX = 0;
+                item.dx *= -1;
+            } else if (currentX + itemWidth >= gameAreaWidth) {
+                currentX = gameAreaWidth - itemWidth;
+                item.dx *= -1;
+            }
+
+            if (currentY <= 0) {
+                currentY = 0;
+                item.dy *= -1;
+            } else if (currentY + itemHeight >= gameAreaHeight) {
+                currentY = gameAreaHeight - itemHeight;
+                item.dy *= -1;
+            }
+
+            item.style.left = currentX + 'px';
+            item.style.top = currentY + 'px';
+        });
+    }
+
+
     function spawnItem() {
       if (!gameActive) return;
 
@@ -435,7 +475,6 @@
       let itemURL = staceyURL;
       let points = gameSettings.pointsPerStacey;
       let isPowerUp = false;
-      // let powerUpType = null; // Not explicitly used after assignment
 
       const rand = Math.random();
 
@@ -447,56 +486,57 @@
         if (Math.random() < 0.5) { 
             itemType = 'timePowerUp';
             itemURL = timePowerUpURL;
-            // powerUpType = 'time'; // Not used further
         } else {
             itemType = 'scorePowerUp';
             itemURL = scorePowerUpURL;
-            // powerUpType = 'score'; // Not used further
         }
       } else if (rand < currentJakeProb + gameSettings.powerUpProb + gameSettings.bystanderProb) {
         itemType = 'bystander';
         itemURL = bystanderURL;
       }
 
-      // Check for placeholder image URLs before creating the image
       if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) {
           console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`);
-          // Optionally, try to spawn another item immediately or after a short delay
-          // For now, we'll just skip this spawn attempt
           return; 
       }
       
       const img = document.createElement('img');
       img.src = itemURL;
-      img.alt = itemType; // Good for accessibility and debugging
+      img.alt = itemType; 
       img.classList.add('item-face');
       if (isPowerUp) img.classList.add('powerup-icon');
       img.setAttribute('draggable', 'false');
       img.dataset.itemType = itemType; 
 
-      // Error handling for image loading
       img.onerror = function() {
           console.error(`Error loading image: ${itemURL} for item type: ${itemType}`);
-          // Optionally remove the broken image element or replace with a placeholder
-          if (img.parentNode) {
-              img.remove();
-          }
-          // Potentially try to spawn another item if this one fails critically
+          if (img.parentNode) img.remove();
       };
-      // Optional: onload check, though most issues are covered by onerror or blank display
-      // img.onload = function() {
-      //    console.log(`Successfully loaded image: ${itemURL}`);
-      // };
 
-
-      const itemSize = 60;
+      const itemSize = 60; // Image dimensions
       const x = Math.random() * (gameArea.clientWidth - itemSize);
       const y = Math.random() * (gameArea.clientHeight - itemSize);
       img.style.left = x + 'px';
       img.style.top = y + 'px';
 
+      // --- NEW: Assign initial speed and direction ---
+      const speed = gameSettings.itemBaseSpeed + Math.random() * gameSettings.itemSpeedVariance;
+      const angle = Math.random() * 2 * Math.PI; // Random angle in radians
+      img.dx = Math.cos(angle) * speed;
+      img.dy = Math.sin(angle) * speed;
+      // Ensure Jake is not too slow if you want him to be a threat
+      if (itemType === 'jake') {
+          img.dx = Math.cos(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance); // Jake might be slightly faster
+          img.dy = Math.sin(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
+      }
+
+
       img.addEventListener('click', (event) => {
-        if (!gameActive) return;
+        if (!gameActive || (img.dx === 0 && img.dy === 0 && !img.classList.contains('stacey-clicked'))) return; // Don't re-process click if already handled
+
+        // --- NEW: Stop movement on click ---
+        img.dx = 0;
+        img.dy = 0;
 
         const clickedItemType = img.dataset.itemType;
 
@@ -504,8 +544,12 @@
           playSound(jakePenaltySfx);
           const noSymbol = document.createElement('div');
           noSymbol.className = 'no-symbol-overlay';
-          noSymbol.style.left = (img.offsetLeft + (img.offsetWidth / 2) - 35) + 'px';
-          noSymbol.style.top = (img.offsetTop + (img.offsetHeight / 2) - 35) + 'px';
+          // Position based on where Jake was clicked
+          const itemRect = img.getBoundingClientRect();
+          const gameAreaRect = gameArea.getBoundingClientRect();
+          noSymbol.style.left = (itemRect.left - gameAreaRect.left + (img.offsetWidth / 2) - 35) + 'px';
+          noSymbol.style.top = (itemRect.top - gameAreaRect.top + (img.offsetHeight / 2) - 35) + 'px';
+
           gameArea.appendChild(noSymbol);
 
           const flash = document.createElement('div');
@@ -554,7 +598,8 @@
         } else if (clickedItemType === 'timePowerUp') {
             playSound(powerUpSfx);
             timeLeft += gameSettings.timePowerUpValue;
-            timeDisplay.textContent = timeLeft;
+            timeDisplay.textContent = timeLeft; // Update time display immediately
+            visualTimerBar.style.width = (timeLeft / gameSettings.initialTime) * 100 + '%'; // Update visual timer too
             createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         } else if (clickedItemType === 'scorePowerUp') {
             playSound(powerUpSfx);
@@ -576,46 +621,51 @@
         } else {
              setTimeout(() => { 
                 if (img.parentNode) img.remove();
-            }, 300); 
+            }, 300); // Match stacey-clicked animation duration
         }
       });
 
       gameArea.appendChild(img);
+      // Auto-remove if not clicked (Jake stays until clicked or game ends)
       if (itemType !== 'jake') {
         setTimeout(() => {
-          if (gameArea.contains(img) && !img.classList.contains('stacey-clicked') && img.style.pointerEvents !== 'none') {
+          // Check if item still exists, hasn't been clicked (so dx/dy aren't 0), and is still in gameArea
+          if (gameArea.contains(img) && (img.dx !== 0 || img.dy !== 0) && !img.classList.contains('stacey-clicked') && img.style.pointerEvents !== 'none') {
               if (itemType === 'stacey') { 
                   comboCount = 0;
                   comboDisplay.textContent = '';
                   clearTimeout(comboTimeout);
               }
-              if (img.parentNode === gameArea) { // Extra check before removing
+              if (img.parentNode === gameArea) {
                 gameArea.removeChild(img);
               }
           }
-        }, itemType === 'bystander' || isPowerUp ? 2500 : 1800); 
+        }, itemType === 'bystander' || isPowerUp ? 3000 : 2500); // Slightly longer time for moving items
       }
     }
 
     function updateTimer() {
       timeLeft--;
       timeDisplay.textContent = timeLeft;
-      const percentageLeft = (timeLeft / gameSettings.initialTime) * 100;
+      const percentageLeft = Math.max(0,(timeLeft / gameSettings.initialTime) * 100); // Ensure not negative
       visualTimerBar.style.width = percentageLeft + '%';
-      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336'; // Red
-      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; // Yellow
+      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336'; 
+      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; 
 
       if (timeLeft <= 0) {
+        timeLeft = 0; // Ensure time doesn't go negative in display
+        timeDisplay.textContent = timeLeft;
         hitJakeInGameOver = false; 
         endGame();
       }
     }
 
     function toggleBackgroundColorFlicker() {
+        if (!gameActive) return; // Only flicker during active game
         if (isFlickerRed) {
-            document.body.style.background = 'rgba(0,0,255,0.3)'; // Blue
+            document.body.style.background = 'rgba(0,0,255,0.3)'; 
         } else {
-            document.body.style.background = 'rgba(255,0,0,0.3)'; // Red
+            document.body.style.background = 'rgba(255,0,0,0.3)'; 
         }
         isFlickerRed = !isFlickerRed;
     }
@@ -624,8 +674,8 @@
       if (gameOverFlickerTimeout) {
         clearTimeout(gameOverFlickerTimeout);
         gameOverFlickerTimeout = null;
-        document.body.style.background = originalBodyBackground; 
       }
+      document.body.style.background = originalBodyBackground; // Ensure reset before game start
 
       gameOverSoundEffect.pause();
       gameOverSoundEffect.currentTime = 0;
@@ -652,7 +702,7 @@
       jailBarsOverlay.classList.remove('active');
       document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
           b.style.animation = 'none'; 
-          b.offsetHeight; // Trigger reflow to restart animation if re-added quickly
+          b.offsetHeight; 
           b.style.animation = ''; 
           b.style.height = '0%'; 
       });
@@ -669,19 +719,19 @@
         music.play().catch(error => console.warn("Music play error:", error.message));
       }
 
-
-      if (flickerInterval) {
-        clearInterval(flickerInterval);
-        flickerInterval = null;
-      }
+      if (flickerInterval) clearInterval(flickerInterval);
       isFlickerRed = false;
-      // toggleBackgroundColorFlicker(); // Initial call can be here or let interval handle first
       flickerInterval = setInterval(toggleBackgroundColorFlicker, 300);
 
       if(spawnIntervalId) clearInterval(spawnIntervalId); 
       spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
+      
       if(gameInterval) clearInterval(gameInterval); 
       gameInterval = setInterval(updateTimer, 1000);
+
+      // --- NEW: Start animation loop ---
+      if(animationIntervalId) clearInterval(animationIntervalId);
+      animationIntervalId = setInterval(updateItemPositions, 50); // Approx 20 FPS for movement
     }
 
     function endGame() {
@@ -690,6 +740,10 @@
 
       clearInterval(spawnIntervalId);
       clearInterval(gameInterval);
+      if (flickerInterval) clearInterval(flickerInterval); // Stop bg flicker immediately
+      // --- NEW: Stop animation loop ---
+      if (animationIntervalId) clearInterval(animationIntervalId);
+
       clearTimeout(comboTimeout);
       clearTimeout(scoreMultiplierTimeout); 
 
@@ -699,12 +753,10 @@
           gameOverMessage.innerHTML = `BUSTED!<br>You hit Jake!<br>Final Score: ${score}`;
           playSound(jailBarSfx);
           jailBarsOverlay.classList.add('active');
-          // Ensure bars animate
           document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
             b.style.animation = 'none';
-            b.offsetHeight; // Reflow
+            b.offsetHeight; 
             b.style.animation = 'dropJailBar 0.6s forwards ease-in-out';
-            // Apply staggered delays if they were reset or not applied correctly on restart
             const index = Array.from(b.parentNode.children).indexOf(b);
             b.style.animationDelay = `${index * 0.05}s`;
           });
@@ -721,18 +773,17 @@
         music.currentTime = 0;
       }
 
-
       if (!wasAlreadyOver) {
           playSound(gameOverSoundEffect);
       }
 
+      // Set background back to original after a delay, only if no new game started
       if (!gameOverFlickerTimeout) {
         gameOverFlickerTimeout = setTimeout(() => {
-          if (flickerInterval) {
-              clearInterval(flickerInterval);
-              flickerInterval = null;
+          // Check if game is still over, not restarted
+          if (!gameActive) {
+            document.body.style.background = originalBodyBackground;
           }
-          document.body.style.background = originalBodyBackground;
           gameOverFlickerTimeout = null;
         }, 7000); 
       }
