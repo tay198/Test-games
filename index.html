@@ -142,7 +142,7 @@
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
-      z-index: 500;
+      z-index: 500; /* Below jail bars (9000) and game over message (10000) */
       pointer-events: none;
       opacity: 0.8;
     }
@@ -197,22 +197,28 @@
 
     #jailBarsOverlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      display: none; justify-content: space-around;
+      display: none; justify-content: space-around; /* This will create space between bars */
       overflow: hidden; z-index: 9000; pointer-events: none;
     }
     #jailBarsOverlay.active { display: flex; }
+
     .jail-bar {
-      background-color: #2c3e50; border: 2px solid #34495e;
-      width: 12%; /* Thinner bars */
-      height: 0%;
+      /* === MODIFIED STYLES FOR THINNER, SILVER BARS === */
+      background-color: #c0c0c0; /* Silver color */
+      border: 1px solid #888888;   /* Darker silver/grey border */
+      width: 6%;                  /* Make bars thinner */
+      /* === END OF MODIFIED STYLES === */
+      height: 0%; /* Starts with no height for the animation */
       animation: dropJailBar 0.6s forwards ease-in-out;
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
     }
+    /* Stagger the animation for a cooler effect */
     .jail-bar:nth-child(1) { animation-delay: 0s; }
     .jail-bar:nth-child(2) { animation-delay: 0.05s; }
     .jail-bar:nth-child(3) { animation-delay: 0.1s; }
     .jail-bar:nth-child(4) { animation-delay: 0.15s; }
     .jail-bar:nth-child(5) { animation-delay: 0.2s; }
-    .jail-bar:nth-child(6) { animation-delay: 0.25s; } /* More bars */
+    .jail-bar:nth-child(6) { animation-delay: 0.25s; }
     .jail-bar:nth-child(7) { animation-delay: 0.3s; }
 
     @keyframes dropJailBar {
@@ -302,7 +308,7 @@
     const closeInstructionsButton = document.getElementById('closeInstructionsButton');
     const jailBarsOverlay = document.getElementById('jailBarsOverlay');
 
-    const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg';
+    const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg'; // This URL seems okay when checked
     const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg';
     const bystanderURL = 'YOUR_BYSTANDER_IMAGE.png'; // Placeholder
     const timePowerUpURL = 'YOUR_TIME_POWERUP_IMAGE.png'; // Placeholder (e.g., a clock icon)
@@ -328,9 +334,9 @@
     let score = 0;
     let highScore = 0;
     let timeLeft = gameSettings.initialTime;
-    let gameInterval, spawnIntervalId; // Renamed spawnInterval to spawnIntervalId
+    let gameInterval, spawnIntervalId; 
     let gameActive = false;
-    let hitJakeInGameOver = false; // To show specific game over
+    let hitJakeInGameOver = false; 
 
     let comboCount = 0;
     let comboTimeout;
@@ -348,7 +354,7 @@
 
     // --- Utility Functions ---
     function playSound(soundElement) {
-        if (soundElement && soundElement.src && soundElement.src !== window.location.href) { // Check if src is valid
+        if (soundElement && soundElement.src && soundElement.src !== window.location.href && !soundElement.src.endsWith('null') && !soundElement.src.endsWith('undefined')) { // Check if src is valid and not a placeholder ending
             soundElement.currentTime = 0;
             soundElement.play().catch(error => console.warn("Audio play error:", error.message, soundElement.src));
         }
@@ -372,10 +378,8 @@
         if (activeScoreMultiplier > 1) {
             displayHTML += `Double Score Active! `;
         }
-        // Add other power-ups here if they have visual indicators
         activePowerUpsDisplay.innerHTML = displayHTML;
     }
-
 
     // --- Instruction Modal Logic ---
     function showInstructions() {
@@ -398,7 +402,6 @@
     closeInstructionsButton.addEventListener('click', hideInstructions);
     showInstructionsButton.addEventListener('click', showInstructions);
 
-
     // --- High Score Logic ---
     function loadHighScore() {
         highScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
@@ -414,18 +417,15 @@
 
     // --- Game Difficulty Scaling ---
     function updateDifficulty() {
-        // Increase difficulty based on score
         const difficultyFactor = Math.floor(score / gameSettings.difficultyScoreThreshold);
         currentSpawnInterval = Math.max(gameSettings.minSpawnInterval, gameSettings.baseSpawnInterval - difficultyFactor * 50);
         currentJakeProb = Math.min(gameSettings.jakeMaxProb, gameSettings.jakeBaseProb + difficultyFactor * 0.02);
 
-        // Reschedule spawn with new interval if it's active
         if (gameActive && spawnIntervalId) {
             clearInterval(spawnIntervalId);
             spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
         }
     }
-
 
     // --- Item Spawning Logic ---
     function spawnItem() {
@@ -435,7 +435,7 @@
       let itemURL = staceyURL;
       let points = gameSettings.pointsPerStacey;
       let isPowerUp = false;
-      let powerUpType = null;
+      // let powerUpType = null; // Not explicitly used after assignment
 
       const rand = Math.random();
 
@@ -444,26 +444,50 @@
         itemURL = jakeURL;
       } else if (rand < currentJakeProb + gameSettings.powerUpProb) {
         isPowerUp = true;
-        if (Math.random() < 0.5) { // 50/50 chance for time or score power-up
+        if (Math.random() < 0.5) { 
             itemType = 'timePowerUp';
             itemURL = timePowerUpURL;
-            powerUpType = 'time';
+            // powerUpType = 'time'; // Not used further
         } else {
             itemType = 'scorePowerUp';
             itemURL = scorePowerUpURL;
-            powerUpType = 'score';
+            // powerUpType = 'score'; // Not used further
         }
       } else if (rand < currentJakeProb + gameSettings.powerUpProb + gameSettings.bystanderProb) {
         itemType = 'bystander';
         itemURL = bystanderURL;
       }
 
+      // Check for placeholder image URLs before creating the image
+      if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) {
+          console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`);
+          // Optionally, try to spawn another item immediately or after a short delay
+          // For now, we'll just skip this spawn attempt
+          return; 
+      }
+      
       const img = document.createElement('img');
       img.src = itemURL;
+      img.alt = itemType; // Good for accessibility and debugging
       img.classList.add('item-face');
       if (isPowerUp) img.classList.add('powerup-icon');
       img.setAttribute('draggable', 'false');
-      img.dataset.itemType = itemType; // Store type for click handler
+      img.dataset.itemType = itemType; 
+
+      // Error handling for image loading
+      img.onerror = function() {
+          console.error(`Error loading image: ${itemURL} for item type: ${itemType}`);
+          // Optionally remove the broken image element or replace with a placeholder
+          if (img.parentNode) {
+              img.remove();
+          }
+          // Potentially try to spawn another item if this one fails critically
+      };
+      // Optional: onload check, though most issues are covered by onerror or blank display
+      // img.onload = function() {
+      //    console.log(`Successfully loaded image: ${itemURL}`);
+      // };
+
 
       const itemSize = 60;
       const x = Math.random() * (gameArea.clientWidth - itemSize);
@@ -484,21 +508,19 @@
           noSymbol.style.top = (img.offsetTop + (img.offsetHeight / 2) - 35) + 'px';
           gameArea.appendChild(noSymbol);
 
-          // Screen flash
           const flash = document.createElement('div');
-          flash.id = 'screenFlashOverlay'; // Will reuse if one is fading
+          flash.id = 'screenFlashOverlay'; 
           if (document.getElementById('screenFlashOverlay')) {
             document.getElementById('screenFlashOverlay').remove();
           }
           gameArea.appendChild(flash);
-
 
           if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
           hitJakeInGameOver = true;
           endGame();
         } else if (clickedItemType === 'stacey') {
           playSound(staceyClickSfx);
-          img.classList.add('stacey-clicked'); // Use new animation
+          img.classList.add('stacey-clicked'); 
 
           comboCount++;
           const pointsEarned = points * (comboCount > 1 ? gameSettings.comboBonusMultiplier : 1) * activeScoreMultiplier;
@@ -520,13 +542,13 @@
           }, 2000);
 
           if (navigator.vibrate) navigator.vibrate(30);
-          updateDifficulty(); // Check if difficulty needs to increase
+          updateDifficulty(); 
         } else if (clickedItemType === 'bystander') {
             playSound(bystanderSfx);
-            score = Math.max(0, score - gameSettings.bystanderPenalty); // Don't go below 0
+            score = Math.max(0, score - gameSettings.bystanderPenalty); 
             scoreDisplay.textContent = score;
             createScorePopup(-gameSettings.bystanderPenalty, img);
-            comboCount = 0; // Reset combo
+            comboCount = 0; 
             comboDisplay.textContent = '';
             if (navigator.vibrate) navigator.vibrate(50);
         } else if (clickedItemType === 'timePowerUp') {
@@ -546,31 +568,32 @@
             }, gameSettings.scorePowerUpDuration);
         }
 
-        img.style.pointerEvents = 'none'; // Prevent multi-clicks
-        if (clickedItemType !== 'stacey') { // Stacey has its own removal animation
+        img.style.pointerEvents = 'none'; 
+        if (clickedItemType !== 'stacey') { 
             setTimeout(() => {
                 if (img.parentNode) img.remove();
-            }, isPowerUp ? 100 : 600); // Power-ups disappear faster
+            }, isPowerUp ? 100 : 600); 
         } else {
-             setTimeout(() => { // Ensure stacey-clicked elements are removed
+             setTimeout(() => { 
                 if (img.parentNode) img.remove();
-            }, 300); // Match animation duration
+            }, 300); 
         }
       });
 
       gameArea.appendChild(img);
-      // Auto-remove if not clicked (except Jake who stays)
       if (itemType !== 'jake') {
         setTimeout(() => {
           if (gameArea.contains(img) && !img.classList.contains('stacey-clicked') && img.style.pointerEvents !== 'none') {
-              if (itemType === 'stacey') { // Only reset combo if Stacey is missed
+              if (itemType === 'stacey') { 
                   comboCount = 0;
                   comboDisplay.textContent = '';
                   clearTimeout(comboTimeout);
               }
-              gameArea.removeChild(img);
+              if (img.parentNode === gameArea) { // Extra check before removing
+                gameArea.removeChild(img);
+              }
           }
-        }, itemType === 'bystander' || isPowerUp ? 2500 : 1800); // Bystanders/Powerups stay a bit longer
+        }, itemType === 'bystander' || isPowerUp ? 2500 : 1800); 
       }
     }
 
@@ -582,9 +605,8 @@
       if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336'; // Red
       else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; // Yellow
 
-
       if (timeLeft <= 0) {
-        hitJakeInGameOver = false; // Time's up, not Jake
+        hitJakeInGameOver = false; 
         endGame();
       }
     }
@@ -602,16 +624,15 @@
       if (gameOverFlickerTimeout) {
         clearTimeout(gameOverFlickerTimeout);
         gameOverFlickerTimeout = null;
-        document.body.style.background = originalBodyBackground; // Ensure reset
+        document.body.style.background = originalBodyBackground; 
       }
 
       gameOverSoundEffect.pause();
       gameOverSoundEffect.currentTime = 0;
-      if (jailBarSfx.src !== window.location.href) { // valid src check
+      if (jailBarSfx.src && jailBarSfx.src !== window.location.href && !jailBarSfx.src.endsWith('null') && !jailBarSfx.src.endsWith('undefined')) { 
         jailBarSfx.pause();
         jailBarSfx.currentTime = 0;
       }
-
 
       gameActive = true;
       hitJakeInGameOver = false;
@@ -630,33 +651,36 @@
       gameOverMessage.style.display = 'none';
       jailBarsOverlay.classList.remove('active');
       document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
-          b.style.animation = 'none'; // Reset animation before re-adding
-          setTimeout(() => b.style.animation = '', 0); // Re-apply for next game over
-          b.style.height = '0%'; // Explicitly hide
+          b.style.animation = 'none'; 
+          b.offsetHeight; // Trigger reflow to restart animation if re-added quickly
+          b.style.animation = ''; 
+          b.style.height = '0%'; 
       });
 
       updateActivePowerUpsDisplay();
       clearTimeout(scoreMultiplierTimeout);
-
 
       startButton.textContent = 'Game in Progress...';
       startButton.disabled = true;
 
       clearGameElements();
 
-      music.play().catch(error => console.warn("Music play error:", error.message));
+      if (music.src && music.src !== window.location.href && !music.src.endsWith('null') && !music.src.endsWith('undefined')) {
+        music.play().catch(error => console.warn("Music play error:", error.message));
+      }
+
 
       if (flickerInterval) {
         clearInterval(flickerInterval);
         flickerInterval = null;
       }
       isFlickerRed = false;
-      toggleBackgroundColorFlicker();
+      // toggleBackgroundColorFlicker(); // Initial call can be here or let interval handle first
       flickerInterval = setInterval(toggleBackgroundColorFlicker, 300);
 
-      if(spawnIntervalId) clearInterval(spawnIntervalId); // Clear previous if any
+      if(spawnIntervalId) clearInterval(spawnIntervalId); 
       spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
-      if(gameInterval) clearInterval(gameInterval); // Clear previous if any
+      if(gameInterval) clearInterval(gameInterval); 
       gameInterval = setInterval(updateTimer, 1000);
     }
 
@@ -667,26 +691,36 @@
       clearInterval(spawnIntervalId);
       clearInterval(gameInterval);
       clearTimeout(comboTimeout);
-      clearTimeout(scoreMultiplierTimeout); // Clear active power-ups
+      clearTimeout(scoreMultiplierTimeout); 
 
-      saveHighScore(); // Save score before displaying message
+      saveHighScore(); 
 
-      // Display Game Over Message
       if (hitJakeInGameOver) {
           gameOverMessage.innerHTML = `BUSTED!<br>You hit Jake!<br>Final Score: ${score}`;
           playSound(jailBarSfx);
           jailBarsOverlay.classList.add('active');
-      } else { // Time's up
+          // Ensure bars animate
+          document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
+            b.style.animation = 'none';
+            b.offsetHeight; // Reflow
+            b.style.animation = 'dropJailBar 0.6s forwards ease-in-out';
+            // Apply staggered delays if they were reset or not applied correctly on restart
+            const index = Array.from(b.parentNode.children).indexOf(b);
+            b.style.animationDelay = `${index * 0.05}s`;
+          });
+      } else { 
           gameOverMessage.innerHTML = `Time's Up!<br>Stacey got away!<br>Final Score: ${score}`;
       }
       gameOverMessage.style.display = 'block';
 
-
       startButton.textContent = 'Restart Game';
       startButton.disabled = false;
 
-      music.pause();
-      music.currentTime = 0;
+      if (music.src && music.src !== window.location.href && !music.src.endsWith('null') && !music.src.endsWith('undefined')) {
+        music.pause();
+        music.currentTime = 0;
+      }
+
 
       if (!wasAlreadyOver) {
           playSound(gameOverSoundEffect);
@@ -700,7 +734,7 @@
           }
           document.body.style.background = originalBodyBackground;
           gameOverFlickerTimeout = null;
-        }, 7000); // Reduced flicker time after game over
+        }, 7000); 
       }
     }
 
