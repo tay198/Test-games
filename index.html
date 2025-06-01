@@ -13,7 +13,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start; /* Align to top to make space for more UI */
+      justify-content: flex-start;
       min-height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
@@ -62,15 +62,15 @@
     #gameArea {
       position: relative;
       width: 90vw;
-      height: 60vh; /* Adjusted for more UI */
+      height: 60vh;
       max-width: 450px;
-      max-height: 600px; /* Adjusted */
+      max-height: 600px;
       background-color: #fff;
       border: 2px solid #333;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       overflow: hidden;
     }
-    .item-face { /* Renamed from .face for clarity */
+    .item-face {
       position: absolute;
       width: 60px;
       height: 60px;
@@ -78,12 +78,12 @@
       border-radius: 50%;
       cursor: pointer;
       user-select: none;
-      transition: transform 0.1s ease-out; /* For click effect */
+      transition: transform 0.1s ease-out;
     }
     .item-face:active {
         transform: scale(0.9);
     }
-    .stacey-clicked { /* Simple animation for Stacey */
+    .stacey-clicked {
         animation: staceyGotClicked 0.3s ease-out forwards;
     }
     @keyframes staceyGotClicked {
@@ -91,7 +91,7 @@
         100% { transform: scale(0.5); opacity: 0;}
     }
 
-    .sparkle { /* Kept for original effect if desired, though stacey-clicked is more direct */
+    .sparkle {
       animation: sparkle 0.6s ease-out forwards;
     }
     @keyframes sparkle {
@@ -123,9 +123,9 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 20px; /* Adjusted */
+      font-size: 20px;
       color: white;
-      background-color: rgba(180, 0, 0, 0.85); /* Darker red */
+      background-color: rgba(180, 0, 0, 0.85);
       padding: 20px;
       border-radius: 10px;
       font-weight: bold;
@@ -134,7 +134,7 @@
       text-align: center;
       line-height: 1.4;
     }
-    .no-symbol-overlay { /* Renamed from blood-overlay */
+    .no-symbol-overlay {
       position: absolute;
       width: 70px;
       height: 70px;
@@ -142,7 +142,7 @@
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
-      z-index: 500; /* Below jail bars (9000) and game over message (10000) */
+      z-index: 500;
       pointer-events: none;
       opacity: 0.8;
     }
@@ -151,7 +151,7 @@
         top: 0; left: 0; width: 100%; height: 100%;
         background-color: red;
         opacity: 0;
-        z-index: 499; /* Below no-symbol */
+        z-index: 499;
         pointer-events: none;
         animation: screenFlashAnim 0.4s ease-out;
     }
@@ -197,15 +197,15 @@
 
     #jailBarsOverlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      display: none; justify-content: space-around; /* This will create space between bars */
+      display: none; justify-content: space-around;
       overflow: hidden; z-index: 9000; pointer-events: none;
     }
     #jailBarsOverlay.active { display: flex; }
 
     .jail-bar {
-      background-color: #c0c0c0; /* Silver color */
-      border: 1px solid #888888;   /* Darker silver/grey border */
-      width: 6%;                  /* Make bars thinner */
+      background-color: #c0c0c0;
+      border: 1px solid #888888;
+      width: 6%;
       height: 0%;
       animation: dropJailBar 0.6s forwards ease-in-out;
       box-sizing: border-box;
@@ -256,12 +256,13 @@
 
   <audio id="gameMusic" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/AC_250601194725.mp3" loop></audio>
   <audio id="gameOverSound" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/END%20OF%20GAME%20SOUND.mp3"></audio>
-  <audio id="staceyClickSound" src="YOUR_STACEY_CLICK_SOUND.mp3"></audio>
+  <audio id="staceyClickSound" src="https://github.com/tay198/Stacey-saying-owe/raw/refs/heads/main/Stacey%20saying%20ouch.m4a"></audio> {/* << UPDATED SRC HERE */}
   <audio id="jakePenaltySound" src="YOUR_JAKE_PENALTY_SOUND.mp3"></audio>
   <audio id="powerUpSound" src="YOUR_POWERUP_COLLECT_SOUND.mp3"></audio>
   <audio id="bystanderSound" src="YOUR_BYSTANDER_HIT_SOUND.mp3"></audio>
   <audio id="comboSound" src="YOUR_COMBO_SOUND.mp3"></audio>
   <audio id="jailBarSound" src="YOUR_JAIL_BAR_SLAM_SOUND.mp3"></audio>
+
 
   <button id="startButton">Start Game</button>
   <button id="showInstructionsButton">How to Play</button>
@@ -269,7 +270,11 @@
   <div id="instructionModal">
     <div id="instructionModalContent">
       <h2>How to Play Taylan's Game!</h2>
-      <p>Stacey's under arrest, catch her before she runs away! But if you accidentally hit Jake, you'll be under arrest for killing a cop! Who's side are you on?</p>
+      <p>Help Stacey collect... items... by clicking her image before time runs out! The items will move, so be quick!
+      Each click on Stacey earns points and builds your combo for bigger scores.
+      Avoid Officer Jake at all costs - clicking him means Game Over! Jake moves too!
+      Watch out for Innocent Bystanders too; clicking them will cost you points.
+      Grab Power-Ups for special boosts!</p>
       <button id="closeInstructionsButton">Got It!</button>
     </div>
   </div>
@@ -288,7 +293,7 @@
 
     const music = document.getElementById('gameMusic');
     const gameOverSoundEffect = document.getElementById('gameOverSound');
-    const staceyClickSfx = document.getElementById('staceyClickSound');
+    const staceyClickSfx = document.getElementById('staceyClickSound'); // This now refers to the "ouch" sound
     const jakePenaltySfx = document.getElementById('jakePenaltySound');
     const powerUpSfx = document.getElementById('powerUpSound');
     const bystanderSfx = document.getElementById('bystanderSound');
@@ -320,8 +325,8 @@
         scorePowerUpDuration: 5000,
         scorePowerUpMultiplier: 2,
         difficultyScoreThreshold: 100,
-        itemBaseSpeed: 4.5, // << SPEED INCREASED HERE
-        itemSpeedVariance: 3.0 // << SPEED INCREASED HERE
+        itemBaseSpeed: 4.5,
+        itemSpeedVariance: 3.0
     };
 
     let score = 0;
@@ -551,7 +556,7 @@
           hitJakeInGameOver = true;
           endGame();
         } else if (clickedItemType === 'stacey') {
-          playSound(staceyClickSfx);
+          playSound(staceyClickSfx); // This will now play the "ouch" sound
           img.classList.add('stacey-clicked');
 
           comboCount++;
@@ -587,7 +592,7 @@
             playSound(powerUpSfx);
             timeLeft += gameSettings.timePowerUpValue;
             timeDisplay.textContent = timeLeft;
-            visualTimerBar.style.width = (timeLeft / gameSettings.initialTime) * 100 + '%';
+            visualTimerBar.style.width = Math.min(100, (timeLeft / gameSettings.initialTime) * 100) + '%'; // Cap at 100%
             createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         } else if (clickedItemType === 'scorePowerUp') {
             playSound(powerUpSfx);
