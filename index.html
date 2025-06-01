@@ -306,10 +306,10 @@
 
     const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg';
     const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg';
-    // --- FIXED PLACEHOLDER URLS ---
-    const bystanderURL = 'https://i.imgur.com/MidmH04.png'; // Generic person icon
-    const timePowerUpURL = 'https://i.imgur.com/CASdcbO.png'; // Generic clock icon
-    const scorePowerUpURL = 'https://i.imgur.com/b6GVLqR.png'; // Generic star icon
+    // --- UPDATED PLACEHOLDER URLS to via.placeholder.com for stability ---
+    const bystanderURL = 'https://via.placeholder.com/60/808080/FFFFFF?text=Byst';
+    const timePowerUpURL = 'https://via.placeholder.com/60/0000FF/FFFFFF?text=Time';
+    const scorePowerUpURL = 'https://via.placeholder.com/60/FFD700/000000?text=Score';
 
     const gameSettings = {
         initialTime: 30,
@@ -326,8 +326,8 @@
         scorePowerUpDuration: 5000,
         scorePowerUpMultiplier: 2,
         difficultyScoreThreshold: 100,
-        itemBaseSpeed: 4.5, // Increased speed
-        itemSpeedVariance: 3.0  // Increased speed variance
+        itemBaseSpeed: 4.5,
+        itemSpeedVariance: 3.0
     };
 
     let score = 0;
@@ -352,7 +352,6 @@
     let scoreMultiplierTimeout;
 
     function playSound(soundElement) {
-        // Added check for "YOUR_" in src to prevent errors for placeholder sounds
         if (soundElement && soundElement.src && soundElement.src !== window.location.href && !soundElement.src.endsWith('null') && !soundElement.src.endsWith('undefined') && !soundElement.src.includes('YOUR_')) {
             soundElement.currentTime = 0;
             soundElement.play().catch(error => console.warn("Audio play error:", error.message, soundElement.src));
@@ -501,7 +500,6 @@
         itemURL = bystanderURL;
       }
 
-      // This check is what was discussed. Now it should allow spawning with the new valid URLs.
       if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) {
           console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`);
           return;
@@ -517,7 +515,7 @@
 
       img.onerror = function() {
           console.error(`Error loading image: ${itemURL} for item type: ${itemType}`);
-          if (img.parentNode) img.remove(); // Remove if image fails to load
+          if (img.parentNode) img.remove();
       };
 
       const itemSize = 60;
@@ -601,7 +599,7 @@
             playSound(powerUpSfx);
             timeLeft += gameSettings.timePowerUpValue;
             timeDisplay.textContent = timeLeft;
-            const maxTime = gameSettings.initialTime > timeLeft ? gameSettings.initialTime : timeLeft; // Recalculate maxTime if needed
+            const maxTime = gameSettings.initialTime > timeLeft ? gameSettings.initialTime : timeLeft;
             visualTimerBar.style.width = Math.min(100, (timeLeft / maxTime) * 100) + '%';
             createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         } else if (clickedItemType === 'scorePowerUp') {
@@ -650,9 +648,9 @@
       timeDisplay.textContent = timeLeft;
       const percentageLeft = Math.max(0,(timeLeft / gameSettings.initialTime) * 100); 
       visualTimerBar.style.width = percentageLeft + '%';
-      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336'; // Red
-      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; // Yellow
-      else visualTimerBar.style.backgroundColor = '#4CAF50'; // Green (reset if time added)
+      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336';
+      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; 
+      else visualTimerBar.style.backgroundColor = '#4CAF50';
 
 
       if (timeLeft <= 0) {
@@ -715,7 +713,7 @@
 
       startButton.textContent = 'Game in Progress...';
       startButton.disabled = true;
-      showInstructionsButton.disabled = true; // Disable instructions button during game
+      showInstructionsButton.disabled = true;
 
       clearGameElements();
 
@@ -725,8 +723,8 @@
 
       if (flickerInterval) clearInterval(flickerInterval);
       isFlickerRed = false;
-      // Only start flicker if game has background flicker enabled, could be a setting
-      // flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); // Commented out if not desired during normal play
+      // --- BACKGROUND FLICKER RE-ENABLED ---
+      flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
 
       if(spawnIntervalId) clearInterval(spawnIntervalId);
       spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
@@ -770,7 +768,7 @@
 
       startButton.textContent = 'Restart Game';
       startButton.disabled = false;
-      showInstructionsButton.disabled = false; // Re-enable instructions button
+      showInstructionsButton.disabled = false; 
 
       if (music.src && music.src !== window.location.href && !music.src.includes('YOUR_')) {
         music.pause();
@@ -781,16 +779,8 @@
           playSound(gameOverSoundEffect);
       }
 
-      document.body.style.background = originalBodyBackground; // Restore original background
-      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout); // Clear any pending timeout
-
-      // Optional: A brief visual cue for game over, like a different background color
-      // document.body.style.background = 'grey'; // Example
-      // gameOverFlickerTimeout = setTimeout(() => {
-      //    if (!gameActive) { 
-      //        document.body.style.background = originalBodyBackground;
-      //    }
-      // }, 3000); 
+      document.body.style.background = originalBodyBackground; 
+      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout); 
     }
 
     function clearGameElements() {
