@@ -1,132 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Tay Loves Thea</title>
-  <style>
-    body {
-      font-family: 'Comic Sans MS', cursive, sans-serif;
-      background: linear-gradient(to bottom, #fff0f5, #ffe4e1);
-      text-align: center;
-      padding: 50px;
-      animation: fadeIn 2s ease;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Undercover Cop Game - Basic World</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #333; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; touch-action: none; }
+        .game-container { border: 2px solid #555; background-color: #444; width: 100%; max-width: 800px; height: 600px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 
-    h1 {
-      font-size: 32px;
-      color: #d63384;
-      animation: slideDown 1s ease;
-    }
+        .game-world {
+            background-color: #2a2a2a;
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
 
-    #message {
-      font-size: 20px;
-      margin-top: 20px;
-      color: #c2185b;
-      white-space: pre-wrap;
-    }
+        #player {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #00ff00; /* Green player */
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10; /* Ensure player is above buildings if they overlap visually */
+        }
 
-    input, button {
-      padding: 10px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin: 10px;
-    }
+        .building {
+            position: absolute; /* Positioned within game-world */
+            background-color: #505060; /* Dark bluish-grey for buildings */
+            border: 1px solid #606070;
+        }
 
-    button {
-      background-color: #ff69b4;
-      color: white;
-      border: none;
-    }
+        /* Specific buildings */
+        #building1 {
+            width: 100px;
+            height: 150px;
+            left: 50px;
+            top: 50px;
+        }
+        #building2 {
+            width: 120px;
+            height: 80px;
+            left: 200px;
+            bottom: 70px; /* Position from bottom */
+        }
+        #building3 {
+            width: 60px;
+            height: 200px;
+            right: 30px; /* Position from right */
+            top: 100px;
+        }
 
-    button:hover {
-      background-color: #ff85c1;
-    }
 
-    .dancer {
-      width: 150px;
-      margin-top: 30px;
-    }
+        .ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .ui-overlay > * { pointer-events: auto; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+        .top-ui { display: flex; justify-content: space-between; padding: 10px; background-color: rgba(0,0,0,0.5); font-size: 0.8em;}
+        .status-bars div { margin-right: 10px; }
+        .zone-info { text-align: center; font-size: 1em; }
+        .alerts-area { text-align: right; }
+        .police-scanner, .gang-messages { font-size: 0.9em; color: #ffc107; }
 
-    @keyframes slideDown {
-      from { transform: translateY(-30px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
+        .bottom-ui { display: flex; justify-content: space-between; align-items: flex-end; padding: 10px; background-color: rgba(0,0,0,0.5); }
+        
+        .joystick-area {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(85, 85, 85, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #777;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .joystick-handle {
+            width: 50px;
+            height: 50px;
+            background-color: #888;
+            border-radius: 50%;
+            position: absolute;
+            border: 1px solid #aaa;
+        }
 
-    .heart {
-      position: absolute;
-      color: red;
-      animation: float 6s infinite;
-      font-size: 24px;
-      opacity: 0.6;
-    }
+        .action-buttons button { padding: 10px 12px; margin-left: 8px; font-size: 0.9em; background-color: #666; color: white; border: 1px solid #888; border-radius: 5px; cursor: pointer; }
+        .action-buttons button:hover { background-color: #777; }
 
-    @keyframes float {
-      0% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(-800px) scale(1.5);
-        opacity: 0;
-      }
-    }
-  </style>
+        .right-ui { position: absolute; right: 10px; top: 25%; display: flex; flex-direction: column; gap: 8px; }
+        .inventory-button, .skills-button, .save-load-button { padding: 8px; background-color: rgba(0,0,0,0.7); border: 1px solid #555; cursor: pointer; font-size: 0.8em; }
+
+        .event-log { position: absolute; bottom: 70px; left: 10px; width: calc(100% - 20px); max-height: 80px; overflow-y: auto; background-color: rgba(0,0,0,0.6); padding: 5px; font-size: 0.7em; border: 1px solid #555; }
+        .event-log p { margin: 2px 0; }
+
+        .modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; color: #333; padding: 20px; border: 1px solid #ccc; z-index: 1000; min-width: 280px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold;}
+
+        .progress-bar-container { width: 80px; background-color: #ddd; border-radius: 5px; margin-bottom: 3px; height: 8px; }
+        .progress-bar { width: 60%; height: 100%; background-color: #4CAF50; border-radius: 5px; }
+        .suspicion .progress-bar { background-color: #f44336; }
+        .trust-police .progress-bar { background-color: #2196F3; }
+        .trust-gang .progress-bar { background-color: #FF9800; }
+    </style>
 </head>
 <body>
-  <h1>Hi, what is your name?</h1>
+    <div class="game-container">
+        <div class="game-world">
+            <div id="player"></div>
 
-  <input type="text" id="nameInput" placeholder="Enter your name" />
-  <br>
-  <button onclick="sayHello()">Greet Me</button>
+            <div id="building1" class="building"></div>
+            <div id="building2" class="building"></div>
+            <div id="building3" class="building"></div>
+        </div>
 
-  <div id="message"></div>
-  <div id="dancerArea"></div>
+        <div class="ui-overlay">
+            <div class="top-ui">
+                <div class="status-bars">
+                    <div>Player Disguise: <span id="player-disguise">Civilian</span></div>
+                    <div class="suspicion">Suspicion: <div class="progress-bar-container"><div class="progress-bar" id="suspicion-bar" style="width: 10%;"></div></div></div>
+                    <div class="trust-police">Police Trust: <div class="progress-bar-container"><div class="progress-bar" id="police-trust-bar" style="width: 50%;"></div></div></div>
+                    <div class="trust-gang">Gang Trust: <div class="progress-bar-container"><div class="progress-bar" id="gang-trust-bar" style="width: 20%;"></div></div></div>
+                </div>
+                <div class="zone-info" id="zone-info-display">Current Zone: Neutral Territory</div>
+                <div class="alerts-area">
+                    <div class="police-scanner" id="police-scanner-display">No alerts</div>
+                    <div class="gang-messages" id="gang-messages-display">No messages</div>
+                </div>
+            </div>
 
-  <script>
-    function sayHello() {
-      const name = document.getElementById("nameInput").value.trim().toLowerCase();
-      const msgBox = document.getElementById("message");
-      const dancerArea = document.getElementById("dancerArea");
-      msgBox.innerHTML = "";
-      dancerArea.innerHTML = "";
+            <div class="right-ui">
+                <button class="inventory-button" id="inventory-btn">Inventory</button>
+                <button class="skills-button" id="skills-btn">Skills</button>
+                <button class="save-load-button" id="save-load-btn">Save/Load</button>
+                <button id="toggle-radio-btn">Radio</button>
+            </div>
 
-      if (name === "thea") {
-        msgBox.innerText = "Hello Thea, welcome to my page.\nTaylan loves you 💖💘💕💞💓❤️";
-        createHearts();
-        showLoopingDancer();
-      } else if (name) {
-        const prettyName = name.charAt(0).toUpperCase() + name.slice(1);
-        msgBox.innerText = `Hello, ${prettyName}!`;
-      } else {
-        msgBox.innerText = "Please enter your name!";
-      }
-    }
+            <div class="event-log" id="event-log-area"><p>Welcome to the city...</p></div>
 
-    function createHearts() {
-      for (let i = 0; i < 20; i++) {
-        const heart = document.createElement("div");
-        heart.className = "heart";
-        heart.innerHTML = "❤️";
-        heart.style.left = Math.random() * 100 + "vw";
-        heart.style.fontSize = (Math.random() * 20 + 20) + "px";
-        document.body.appendChild(heart);
-        setTimeout(() => heart.remove(), 6000);
-      }
-    }
+            <div class="bottom-ui">
+                <div class="joystick-area" id="joystick-area">
+                    <div class="joystick-handle" id="joystick-handle"></div>
+                </div>
+                <div class="action-buttons">
+                    <button id="talk-button">Talk</button>
+                    <button id="interact-button">Use</button>
+                    <button id="punch-button">Punch</button>
+                    <button id="call-backup-button">Backup</button>
+                </div>
+            </div>
+        </div>
 
-    function showLoopingDancer() {
-      const gif = document.createElement("img");
-      gif.src = "https://media.tenor.com/2roX3uxz_68AAAAC/dance-party.gif"; // loops forever!
-      gif.className = "dancer";
-      document.getElementById("dancerArea").appendChild(gif);
-    }
-  </script>
+        <div id="dialogue-modal" class="modal"> <span class="modal-close" onclick="this.parentElement.style.display='none'">&times;</span> ... </div>
+        <div id="inventory-modal" class="modal"> <span class="modal-close" onclick="this.parentElement.style.display='none'">&times;</span> ... </div>
+        <div id="skills-modal" class="modal"> <span class="modal-close" onclick="this.parentElement.style.display='none'">&times;</span> ... </div>
+    </div>
+
+    <script>
+        // Player movement and joystick JavaScript is THE SAME as before.
+        // No changes needed here for just adding visual buildings.
+        document.addEventListener('DOMContentLoaded', () => {
+            const player = document.getElementById('player');
+            const gameWorld = document.querySelector('.game-world');
+            const joystickArea = document.getElementById('joystick-area');
+            const joystickHandle = document.getElementById('joystick-handle');
+
+            let playerX = player.offsetLeft;
+            let playerY = player.offsetTop;
+            const playerSpeed = 2;
+
+            let joystickActive = false;
+            const joystickMaxDistance = joystickArea.offsetWidth / 2 - joystickHandle.offsetWidth / 2;
+
+            joystickHandle.style.left = (joystickArea.offsetWidth / 2 - joystickHandle.offsetWidth / 2) + 'px';
+            joystickHandle.style.top = (joystickArea.offsetHeight / 2 - joystickHandle.offsetHeight / 2) + 'px';
+
+            function handleJoystickStart(clientX, clientY) {
+                joystickActive = true;
+                // No need to store startX/Y for this implementation if handle moves from center
+            }
+
+            function handleJoystickMove(clientX, clientY) {
+                if (!joystickActive) return;
+
+                const rect = joystickArea.getBoundingClientRect();
+                let currentXInArea = clientX - rect.left;
+                let currentYInArea = clientY - rect.top;
+
+                let deltaX = currentXInArea - (joystickArea.offsetWidth / 2);
+                let deltaY = currentYInArea - (joystickArea.offsetHeight / 2);
+
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                let moveXNormalized = deltaX / distance;
+                let moveYNormalized = deltaY / distance;
+
+                if (distance > joystickMaxDistance) {
+                    deltaX = moveXNormalized * joystickMaxDistance;
+                    deltaY = moveYNormalized * joystickMaxDistance;
+                }
+                
+                joystickHandle.style.left = (joystickArea.offsetWidth / 2 - joystickHandle.offsetWidth / 2 + deltaX) + 'px';
+                joystickHandle.style.top = (joystickArea.offsetHeight / 2 - joystickHandle.offsetHeight / 2 + deltaY) + 'px';
+
+                if (distance > 5) { 
+                    const playerMoveAngle = Math.atan2(deltaY, deltaX);
+                    playerX += Math.cos(playerMoveAngle) * playerSpeed;
+                    playerY += Math.sin(playerMoveAngle) * playerSpeed;
+                }
+            }
+
+            function handleJoystickEnd() {
+                joystickActive = false;
+                joystickHandle.style.left = (joystickArea.offsetWidth / 2 - joystickHandle.offsetWidth / 2) + 'px';
+                joystickHandle.style.top = (joystickArea.offsetHeight / 2 - joystickHandle.offsetHeight / 2) + 'px';
+            }
+
+            // Touch events
+            joystickArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                handleJoystickStart(touch.clientX, touch.clientY);
+            });
+            joystickArea.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                handleJoystickMove(touch.clientX, touch.clientY);
+            });
+            joystickArea.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleJoystickEnd();
+            });
+            
+            // Mouse events
+            joystickArea.addEventListener('mousedown', (e) => {
+                handleJoystickStart(e.clientX, e.clientY);
+            });
+            document.addEventListener('mousemove', (e) => { // Listen on document
+                handleJoystickMove(e.clientX, e.clientY);
+            });
+            document.addEventListener('mouseup', () => {
+                if (joystickActive) { // Only if joystick was active
+                   handleJoystickEnd();
+                }
+            });
+
+            function gameLoop() {
+                const playerWidth = player.offsetWidth;
+                const playerHeight = player.offsetHeight;
+                const worldWidth = gameWorld.clientWidth;
+                const worldHeight = gameWorld.clientHeight;
+
+                if (playerX < 0) playerX = 0;
+                if (playerY < 0) playerY = 0;
+                if (playerX + playerWidth > worldWidth) playerX = worldWidth - playerWidth;
+                if (playerY + playerHeight > worldHeight) playerY = worldHeight - playerHeight;
+
+                player.style.left = playerX + 'px';
+                player.style.top = playerY + 'px';
+
+                requestAnimationFrame(gameLoop);
+            }
+            gameLoop();
+
+            // Modal JS
+            const inventoryBtn = document.getElementById('inventory-btn');
+            const inventoryModal = document.getElementById('inventory-modal');
+            if (inventoryBtn && inventoryModal && inventoryModal.querySelector('.modal-close')) {
+                inventoryBtn.addEventListener('click', () => { inventoryModal.style.display = 'block'; });
+                inventoryModal.querySelector('.modal-close').addEventListener('click', () => {inventoryModal.style.display='none'});
+            }
+            const skillsBtn = document.getElementById('skills-btn');
+            const skillsModal = document.getElementById('skills-modal');
+            if (skillsBtn && skillsModal && skillsModal.querySelector('.modal-close')) {
+                skillsBtn.addEventListener('click', () => { skillsModal.style.display = 'block'; });
+                 skillsModal.querySelector('.modal-close').addEventListener('click', () => {skillsModal.style.display='none'});
+            }
+        });
+    </script>
 </body>
 </html>
