@@ -206,16 +206,16 @@
       background-color: #c0c0c0; /* Silver color */
       border: 1px solid #888888;   /* Darker silver/grey border */
       width: 6%;                  /* Make bars thinner */
-      height: 0%; 
+      height: 0%;
       animation: dropJailBar 0.6s forwards ease-in-out;
-      box-sizing: border-box; 
+      box-sizing: border-box;
     }
     .jail-bar:nth-child(1) { animation-delay: 0s; }
     .jail-bar:nth-child(2) { animation-delay: 0.05s; }
     .jail-bar:nth-child(3) { animation-delay: 0.1s; }
     .jail-bar:nth-child(4) { animation-delay: 0.15s; }
     .jail-bar:nth-child(5) { animation-delay: 0.2s; }
-    .jail-bar:nth-child(6) { animation-delay: 0.25s; } 
+    .jail-bar:nth-child(6) { animation-delay: 0.25s; }
     .jail-bar:nth-child(7) { animation-delay: 0.3s; }
 
     @keyframes dropJailBar {
@@ -311,29 +311,29 @@
 
     const gameSettings = {
         initialTime: 30,
-        baseSpawnInterval: 950, 
-        minSpawnInterval: 400,  
-        jakeBaseProb: 0.20,     
-        jakeMaxProb: 0.40,      
-        powerUpProb: 0.10,      
-        bystanderProb: 0.15,    
+        baseSpawnInterval: 950,
+        minSpawnInterval: 400,
+        jakeBaseProb: 0.20,
+        jakeMaxProb: 0.40,
+        powerUpProb: 0.10,
+        bystanderProb: 0.15,
         pointsPerStacey: 5,
         comboBonusMultiplier: 2,
         bystanderPenalty: 10,
-        timePowerUpValue: 5,    
-        scorePowerUpDuration: 5000, 
+        timePowerUpValue: 5,
+        scorePowerUpDuration: 5000,
         scorePowerUpMultiplier: 2,
-        difficultyScoreThreshold: 100, 
-        itemBaseSpeed: 1.5, // Base speed for items (pixels per frame)
-        itemSpeedVariance: 1 // Max additional random speed
+        difficultyScoreThreshold: 100,
+        itemBaseSpeed: 4.5, // << SPEED INCREASED HERE
+        itemSpeedVariance: 3.0 // << SPEED INCREASED HERE
     };
 
     let score = 0;
     let highScore = 0;
     let timeLeft = gameSettings.initialTime;
-    let gameInterval, spawnIntervalId, animationIntervalId; // Added animationIntervalId
+    let gameInterval, spawnIntervalId, animationIntervalId;
     let gameActive = false;
-    let hitJakeInGameOver = false; 
+    let hitJakeInGameOver = false;
 
     let comboCount = 0;
     let comboTimeout;
@@ -361,8 +361,7 @@
         popup.textContent = (value > 0 ? '+' : '') + value;
         popup.className = 'score-popup';
         popup.style.color = value > 0 ? 'gold' : 'red';
-        
-        // Position popup relative to the clicked item's current position
+
         const itemRect = element.getBoundingClientRect();
         const gameAreaRect = gameArea.getBoundingClientRect();
         popup.style.left = (itemRect.left - gameAreaRect.left + element.offsetWidth / 2 - 15) + 'px';
@@ -425,7 +424,6 @@
         }
     }
 
-    // --- NEW: Function to update item positions ---
     function updateItemPositions() {
         if (!gameActive) return;
         const items = gameArea.querySelectorAll('.item-face');
@@ -433,9 +431,8 @@
         const gameAreaHeight = gameArea.clientHeight;
 
         items.forEach(item => {
-            // Skip items that have been clicked (dx/dy will be set to 0) or are part of an animation that shouldn't move
             if (item.dx === 0 && item.dy === 0) return;
-            if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return; // Not yet fully initialized for movement
+            if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return;
 
             let currentX = parseFloat(item.style.left);
             let currentY = parseFloat(item.style.top);
@@ -445,7 +442,6 @@
             currentX += item.dx;
             currentY += item.dy;
 
-            // Bounce off walls
             if (currentX <= 0) {
                 currentX = 0;
                 item.dx *= -1;
@@ -483,7 +479,7 @@
         itemURL = jakeURL;
       } else if (rand < currentJakeProb + gameSettings.powerUpProb) {
         isPowerUp = true;
-        if (Math.random() < 0.5) { 
+        if (Math.random() < 0.5) {
             itemType = 'timePowerUp';
             itemURL = timePowerUpURL;
         } else {
@@ -497,44 +493,41 @@
 
       if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) {
           console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`);
-          return; 
+          return;
       }
-      
+
       const img = document.createElement('img');
       img.src = itemURL;
-      img.alt = itemType; 
+      img.alt = itemType;
       img.classList.add('item-face');
       if (isPowerUp) img.classList.add('powerup-icon');
       img.setAttribute('draggable', 'false');
-      img.dataset.itemType = itemType; 
+      img.dataset.itemType = itemType;
 
       img.onerror = function() {
           console.error(`Error loading image: ${itemURL} for item type: ${itemType}`);
           if (img.parentNode) img.remove();
       };
 
-      const itemSize = 60; // Image dimensions
+      const itemSize = 60;
       const x = Math.random() * (gameArea.clientWidth - itemSize);
       const y = Math.random() * (gameArea.clientHeight - itemSize);
       img.style.left = x + 'px';
       img.style.top = y + 'px';
 
-      // --- NEW: Assign initial speed and direction ---
       const speed = gameSettings.itemBaseSpeed + Math.random() * gameSettings.itemSpeedVariance;
-      const angle = Math.random() * 2 * Math.PI; // Random angle in radians
+      const angle = Math.random() * 2 * Math.PI;
       img.dx = Math.cos(angle) * speed;
       img.dy = Math.sin(angle) * speed;
-      // Ensure Jake is not too slow if you want him to be a threat
       if (itemType === 'jake') {
-          img.dx = Math.cos(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance); // Jake might be slightly faster
+          img.dx = Math.cos(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
           img.dy = Math.sin(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
       }
 
 
       img.addEventListener('click', (event) => {
-        if (!gameActive || (img.dx === 0 && img.dy === 0 && !img.classList.contains('stacey-clicked'))) return; // Don't re-process click if already handled
+        if (!gameActive || (img.dx === 0 && img.dy === 0 && !img.classList.contains('stacey-clicked'))) return;
 
-        // --- NEW: Stop movement on click ---
         img.dx = 0;
         img.dy = 0;
 
@@ -544,7 +537,6 @@
           playSound(jakePenaltySfx);
           const noSymbol = document.createElement('div');
           noSymbol.className = 'no-symbol-overlay';
-          // Position based on where Jake was clicked
           const itemRect = img.getBoundingClientRect();
           const gameAreaRect = gameArea.getBoundingClientRect();
           noSymbol.style.left = (itemRect.left - gameAreaRect.left + (img.offsetWidth / 2) - 35) + 'px';
@@ -553,7 +545,7 @@
           gameArea.appendChild(noSymbol);
 
           const flash = document.createElement('div');
-          flash.id = 'screenFlashOverlay'; 
+          flash.id = 'screenFlashOverlay';
           if (document.getElementById('screenFlashOverlay')) {
             document.getElementById('screenFlashOverlay').remove();
           }
@@ -564,7 +556,7 @@
           endGame();
         } else if (clickedItemType === 'stacey') {
           playSound(staceyClickSfx);
-          img.classList.add('stacey-clicked'); 
+          img.classList.add('stacey-clicked');
 
           comboCount++;
           const pointsEarned = points * (comboCount > 1 ? gameSettings.comboBonusMultiplier : 1) * activeScoreMultiplier;
@@ -586,20 +578,20 @@
           }, 2000);
 
           if (navigator.vibrate) navigator.vibrate(30);
-          updateDifficulty(); 
+          updateDifficulty();
         } else if (clickedItemType === 'bystander') {
             playSound(bystanderSfx);
-            score = Math.max(0, score - gameSettings.bystanderPenalty); 
+            score = Math.max(0, score - gameSettings.bystanderPenalty);
             scoreDisplay.textContent = score;
             createScorePopup(-gameSettings.bystanderPenalty, img);
-            comboCount = 0; 
+            comboCount = 0;
             comboDisplay.textContent = '';
             if (navigator.vibrate) navigator.vibrate(50);
         } else if (clickedItemType === 'timePowerUp') {
             playSound(powerUpSfx);
             timeLeft += gameSettings.timePowerUpValue;
-            timeDisplay.textContent = timeLeft; // Update time display immediately
-            visualTimerBar.style.width = (timeLeft / gameSettings.initialTime) * 100 + '%'; // Update visual timer too
+            timeDisplay.textContent = timeLeft;
+            visualTimerBar.style.width = (timeLeft / gameSettings.initialTime) * 100 + '%';
             createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         } else if (clickedItemType === 'scorePowerUp') {
             playSound(powerUpSfx);
@@ -613,25 +605,23 @@
             }, gameSettings.scorePowerUpDuration);
         }
 
-        img.style.pointerEvents = 'none'; 
-        if (clickedItemType !== 'stacey') { 
+        img.style.pointerEvents = 'none';
+        if (clickedItemType !== 'stacey') {
             setTimeout(() => {
                 if (img.parentNode) img.remove();
-            }, isPowerUp ? 100 : 600); 
+            }, isPowerUp ? 100 : 600);
         } else {
-             setTimeout(() => { 
+             setTimeout(() => {
                 if (img.parentNode) img.remove();
-            }, 300); // Match stacey-clicked animation duration
+            }, 300);
         }
       });
 
       gameArea.appendChild(img);
-      // Auto-remove if not clicked (Jake stays until clicked or game ends)
       if (itemType !== 'jake') {
         setTimeout(() => {
-          // Check if item still exists, hasn't been clicked (so dx/dy aren't 0), and is still in gameArea
           if (gameArea.contains(img) && (img.dx !== 0 || img.dy !== 0) && !img.classList.contains('stacey-clicked') && img.style.pointerEvents !== 'none') {
-              if (itemType === 'stacey') { 
+              if (itemType === 'stacey') {
                   comboCount = 0;
                   comboDisplay.textContent = '';
                   clearTimeout(comboTimeout);
@@ -640,32 +630,32 @@
                 gameArea.removeChild(img);
               }
           }
-        }, itemType === 'bystander' || isPowerUp ? 3000 : 2500); // Slightly longer time for moving items
+        }, itemType === 'bystander' || isPowerUp ? 3000 : 2500);
       }
     }
 
     function updateTimer() {
       timeLeft--;
       timeDisplay.textContent = timeLeft;
-      const percentageLeft = Math.max(0,(timeLeft / gameSettings.initialTime) * 100); // Ensure not negative
+      const percentageLeft = Math.max(0,(timeLeft / gameSettings.initialTime) * 100);
       visualTimerBar.style.width = percentageLeft + '%';
-      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336'; 
-      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; 
+      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336';
+      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b';
 
       if (timeLeft <= 0) {
-        timeLeft = 0; // Ensure time doesn't go negative in display
+        timeLeft = 0;
         timeDisplay.textContent = timeLeft;
-        hitJakeInGameOver = false; 
+        hitJakeInGameOver = false;
         endGame();
       }
     }
 
     function toggleBackgroundColorFlicker() {
-        if (!gameActive) return; // Only flicker during active game
+        if (!gameActive) return;
         if (isFlickerRed) {
-            document.body.style.background = 'rgba(0,0,255,0.3)'; 
+            document.body.style.background = 'rgba(0,0,255,0.3)';
         } else {
-            document.body.style.background = 'rgba(255,0,0,0.3)'; 
+            document.body.style.background = 'rgba(255,0,0,0.3)';
         }
         isFlickerRed = !isFlickerRed;
     }
@@ -675,11 +665,11 @@
         clearTimeout(gameOverFlickerTimeout);
         gameOverFlickerTimeout = null;
       }
-      document.body.style.background = originalBodyBackground; // Ensure reset before game start
+      document.body.style.background = originalBodyBackground;
 
       gameOverSoundEffect.pause();
       gameOverSoundEffect.currentTime = 0;
-      if (jailBarSfx.src && jailBarSfx.src !== window.location.href && !jailBarSfx.src.endsWith('null') && !jailBarSfx.src.endsWith('undefined')) { 
+      if (jailBarSfx.src && jailBarSfx.src !== window.location.href && !jailBarSfx.src.endsWith('null') && !jailBarSfx.src.endsWith('undefined')) {
         jailBarSfx.pause();
         jailBarSfx.currentTime = 0;
       }
@@ -701,10 +691,10 @@
       gameOverMessage.style.display = 'none';
       jailBarsOverlay.classList.remove('active');
       document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
-          b.style.animation = 'none'; 
-          b.offsetHeight; 
-          b.style.animation = ''; 
-          b.style.height = '0%'; 
+          b.style.animation = 'none';
+          b.offsetHeight;
+          b.style.animation = '';
+          b.style.height = '0%';
       });
 
       updateActivePowerUpsDisplay();
@@ -723,15 +713,14 @@
       isFlickerRed = false;
       flickerInterval = setInterval(toggleBackgroundColorFlicker, 300);
 
-      if(spawnIntervalId) clearInterval(spawnIntervalId); 
+      if(spawnIntervalId) clearInterval(spawnIntervalId);
       spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
-      
-      if(gameInterval) clearInterval(gameInterval); 
+
+      if(gameInterval) clearInterval(gameInterval);
       gameInterval = setInterval(updateTimer, 1000);
 
-      // --- NEW: Start animation loop ---
       if(animationIntervalId) clearInterval(animationIntervalId);
-      animationIntervalId = setInterval(updateItemPositions, 50); // Approx 20 FPS for movement
+      animationIntervalId = setInterval(updateItemPositions, 50);
     }
 
     function endGame() {
@@ -740,14 +729,13 @@
 
       clearInterval(spawnIntervalId);
       clearInterval(gameInterval);
-      if (flickerInterval) clearInterval(flickerInterval); // Stop bg flicker immediately
-      // --- NEW: Stop animation loop ---
+      if (flickerInterval) clearInterval(flickerInterval);
       if (animationIntervalId) clearInterval(animationIntervalId);
 
       clearTimeout(comboTimeout);
-      clearTimeout(scoreMultiplierTimeout); 
+      clearTimeout(scoreMultiplierTimeout);
 
-      saveHighScore(); 
+      saveHighScore();
 
       if (hitJakeInGameOver) {
           gameOverMessage.innerHTML = `BUSTED!<br>You hit Jake!<br>Final Score: ${score}`;
@@ -755,12 +743,12 @@
           jailBarsOverlay.classList.add('active');
           document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
             b.style.animation = 'none';
-            b.offsetHeight; 
+            b.offsetHeight;
             b.style.animation = 'dropJailBar 0.6s forwards ease-in-out';
             const index = Array.from(b.parentNode.children).indexOf(b);
             b.style.animationDelay = `${index * 0.05}s`;
           });
-      } else { 
+      } else {
           gameOverMessage.innerHTML = `Time's Up!<br>Stacey got away!<br>Final Score: ${score}`;
       }
       gameOverMessage.style.display = 'block';
@@ -777,15 +765,13 @@
           playSound(gameOverSoundEffect);
       }
 
-      // Set background back to original after a delay, only if no new game started
       if (!gameOverFlickerTimeout) {
         gameOverFlickerTimeout = setTimeout(() => {
-          // Check if game is still over, not restarted
           if (!gameActive) {
             document.body.style.background = originalBodyBackground;
           }
           gameOverFlickerTimeout = null;
-        }, 7000); 
+        }, 7000);
       }
     }
 
