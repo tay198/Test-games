@@ -138,7 +138,7 @@
       position: absolute;
       width: 70px;
       height: 70px;
-      background-image: url('https://i.imgur.com/AhrFSJL.jpeg'); /* No symbol */
+      background-image: url('https://i.imgur.com/AhrFSJL.jpeg');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -256,7 +256,7 @@
 
   <audio id="gameMusic" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/AC_250601194725.mp3" loop></audio>
   <audio id="gameOverSound" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/END%20OF%20GAME%20SOUND.mp3"></audio>
-  <audio id="staceyClickSound" src="https://github.com/tay198/Stacey-saying-owe/raw/refs/heads/main/Stacey%20saying%20ouch.m4a"></audio> {/* << UPDATED SRC HERE */}
+  <audio id="staceyClickSound" src="https://github.com/tay198/Stacey-saying-owe/raw/refs/heads/main/Stacey%20saying%20ouch.m4a"></audio>
   <audio id="jakePenaltySound" src="YOUR_JAKE_PENALTY_SOUND.mp3"></audio>
   <audio id="powerUpSound" src="YOUR_POWERUP_COLLECT_SOUND.mp3"></audio>
   <audio id="bystanderSound" src="YOUR_BYSTANDER_HIT_SOUND.mp3"></audio>
@@ -293,7 +293,7 @@
 
     const music = document.getElementById('gameMusic');
     const gameOverSoundEffect = document.getElementById('gameOverSound');
-    const staceyClickSfx = document.getElementById('staceyClickSound'); // This now refers to the "ouch" sound
+    const staceyClickSfx = document.getElementById('staceyClickSound');
     const jakePenaltySfx = document.getElementById('jakePenaltySound');
     const powerUpSfx = document.getElementById('powerUpSound');
     const bystanderSfx = document.getElementById('bystanderSound');
@@ -398,6 +398,10 @@
       } else {
         startButton.disabled = false;
       }
+
+      // Preload audio
+      staceyClickSfx.preload = 'auto';
+      staceyClickSfx.load();
     });
     closeInstructionsButton.addEventListener('click', hideInstructions);
     showInstructionsButton.addEventListener('click', showInstructions);
@@ -556,7 +560,7 @@
           hitJakeInGameOver = true;
           endGame();
         } else if (clickedItemType === 'stacey') {
-          playSound(staceyClickSfx); // This will now play the "ouch" sound
+          playSound(staceyClickSfx);
           img.classList.add('stacey-clicked');
 
           comboCount++;
@@ -592,7 +596,7 @@
             playSound(powerUpSfx);
             timeLeft += gameSettings.timePowerUpValue;
             timeDisplay.textContent = timeLeft;
-            visualTimerBar.style.width = Math.min(100, (timeLeft / gameSettings.initialTime) * 100) + '%'; // Cap at 100%
+            visualTimerBar.style.width = Math.min(100, (timeLeft / gameSettings.initialTime) * 100) + '%';
             createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         } else if (clickedItemType === 'scorePowerUp') {
             playSound(powerUpSfx);
@@ -729,7 +733,8 @@
       gameActive = false;
 
       clearInterval(spawnIntervalId);
-      clearInterval(gameInterval);
+      clearInterval(game
+      clearInterval(gameInterval); // Corrected line
       if (flickerInterval) clearInterval(flickerInterval);
       if (animationIntervalId) clearInterval(animationIntervalId);
 
@@ -744,7 +749,7 @@
           jailBarsOverlay.classList.add('active');
           document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
             b.style.animation = 'none';
-            b.offsetHeight;
+            b.offsetHeight; // Trigger reflow
             b.style.animation = 'dropJailBar 0.6s forwards ease-in-out';
             const index = Array.from(b.parentNode.children).indexOf(b);
             b.style.animationDelay = `${index * 0.05}s`;
@@ -768,7 +773,7 @@
 
       if (!gameOverFlickerTimeout) {
         gameOverFlickerTimeout = setTimeout(() => {
-          if (!gameActive) {
+          if (!gameActive) { // Only reset background if game hasn't restarted
             document.body.style.background = originalBodyBackground;
           }
           gameOverFlickerTimeout = null;
