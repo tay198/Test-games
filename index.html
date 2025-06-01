@@ -306,7 +306,6 @@
 
     const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg';
     const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg';
-    // --- UPDATED PLACEHOLDER URLS to via.placeholder.com for stability ---
     const bystanderURL = 'https://via.placeholder.com/60/808080/FFFFFF?text=Byst';
     const timePowerUpURL = 'https://via.placeholder.com/60/0000FF/FFFFFF?text=Time';
     const scorePowerUpURL = 'https://via.placeholder.com/60/FFD700/000000?text=Score';
@@ -343,7 +342,7 @@
     let flickerInterval = null;
     let originalBodyBackground = getComputedStyle(document.body).getPropertyValue('--original-bg');
     let isFlickerRed = false;
-    let gameOverFlickerTimeout = null;
+    let gameOverFlickerTimeout = null; // Renamed for clarity, used for post-game flicker timeout
 
     let currentSpawnInterval = gameSettings.baseSpawnInterval;
     let currentJakeProb = gameSettings.jakeBaseProb;
@@ -400,6 +399,12 @@
       } else {
         startButton.disabled = false;
       }
+
+      // --- AUDIO VOLUME ADJUSTMENTS ---
+      if (music) music.volume = 0.3; // Set background music to 30% volume
+      if (staceyClickSfx) staceyClickSfx.volume = 1.0; // Set Stacey's ouch sound to 100% volume
+      // You might want to set other sound effect volumes too, e.g., gameOverSoundEffect.volume = 0.5;
+
 
       if (staceyClickSfx.src && staceyClickSfx.src !== window.location.href && !staceyClickSfx.src.includes("YOUR_")) {
         staceyClickSfx.preload = 'auto';
@@ -662,20 +667,20 @@
     }
 
     function toggleBackgroundColorFlicker() {
-        if (!gameActive) return; 
+        // This function is now also used for post-game flicker
         if (isFlickerRed) {
-            document.body.style.background = 'rgba(0,0,255,0.3)'; 
+            document.body.style.background = 'rgba(0,0,255,0.3)'; // Blue
         } else {
-            document.body.style.background = 'rgba(255,0,0,0.3)'; 
+            document.body.style.background = 'rgba(255,0,0,0.3)'; // Red
         }
         isFlickerRed = !isFlickerRed;
     }
 
     function startGame() {
-      if (gameOverFlickerTimeout) {
-        clearTimeout(gameOverFlickerTimeout);
-        gameOverFlickerTimeout = null;
-      }
+      // Clear any existing game over flicker timeout or interval
+      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
+      if (flickerInterval) clearInterval(flickerInterval); // Clears game OR post-game flicker
+
       document.body.style.background = originalBodyBackground; 
 
       gameOverSoundEffect.pause();
@@ -721,10 +726,8 @@
         music.play().catch(error => console.warn("Music play error:", error.message));
       }
 
-      if (flickerInterval) clearInterval(flickerInterval);
-      isFlickerRed = false;
-      // --- BACKGROUND FLICKER RE-ENABLED ---
-      flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
+      isFlickerRed = false; // Reset flicker state
+      flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); // Gameplay flicker
 
       if(spawnIntervalId) clearInterval(spawnIntervalId);
       spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
@@ -738,15 +741,20 @@
 
     function endGame() {
       const wasAlreadyOver = !gameActive;
-      gameActive = false;
+      gameActive = false; // Set game to inactive
 
+      // Clear gameplay intervals
       clearInterval(spawnIntervalId);
       clearInterval(gameInterval);
-      if (flickerInterval) clearInterval(flickerInterval); 
       if (animationIntervalId) clearInterval(animationIntervalId); 
-
       clearTimeout(comboTimeout);
       clearTimeout(scoreMultiplierTimeout);
+
+      // Stop gameplay flicker if it was running
+      if (flickerInterval) clearInterval(flickerInterval);
+      // Clear any pending game over flicker timeout from a previous quick end/restart
+      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
+
 
       saveHighScore();
 
@@ -775,12 +783,20 @@
         music.currentTime = 0;
       }
 
-      if (!wasAlreadyOver) {
+      if (!wasAlreadyOver) { // Only play game over sound if it wasn't already over
           playSound(gameOverSoundEffect);
       }
 
-      document.body.style.background = originalBodyBackground; 
-      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout); 
+      // --- POST-GAME OVER FLICKER for 10 seconds ---
+      // isFlickerRed = false; // Optional: reset flicker start color
+      flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); // Start post-game flicker
+
+      gameOverFlickerTimeout = setTimeout(() => {
+          clearInterval(flickerInterval); // Stop the post-game flicker
+          if (!gameActive) { // Only reset background if a new game hasn't started
+            document.body.style.background = originalBodyBackground;
+          }
+      }, 10000); // 10 seconds
     }
 
     function clearGameElements() {
