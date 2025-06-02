@@ -24,6 +24,43 @@
       margin-top: 0;
       margin-bottom: 8px;
     }
+    #authContainer {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        text-align: center;
+        width: 90vw;
+        max-width: 450px;
+    }
+    #authContainer input[type="email"],
+    #authContainer input[type="password"] {
+        margin-bottom: 5px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        width: calc(100% - 20px);
+    }
+    #authContainer button {
+        padding: 8px 15px;
+        font-size: 0.9em;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    #authContainer button:hover {
+        background-color: #218838;
+    }
+    #logoutButton {
+        background-color: #dc3545 !important;
+    }
+    #logoutButton:hover {
+        background-color: #c82333 !important;
+    }
     #scoreBoard, #highScoreBoard, #timer, #combo {
       margin: 3px;
       font-size: 17px;
@@ -91,7 +128,7 @@
         100% { transform: scale(0.5); opacity: 0;}
     }
 
-    .sparkle { /* Kept for original effect if desired, though stacey-clicked is more direct */
+    .sparkle {
       animation: sparkle 0.6s ease-out forwards;
     }
     @keyframes sparkle {
@@ -138,7 +175,7 @@
       position: absolute;
       width: 70px;
       height: 70px;
-      background-image: url('https://i.imgur.com/AhrFSJL.jpeg'); /* No symbol image */
+      background-image: url('https://i.imgur.com/AhrFSJL.jpeg');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -249,6 +286,23 @@
   </style>
 </head>
 <body>
+
+  <div id="authContainer">
+    <div id="userAuthStatus" style="margin-bottom: 10px; font-weight: bold;">Loading user status...</div>
+    <div id="loginForm">
+      <h3>Login</h3>
+      <input type="email" id="loginEmail" placeholder="Email" required><br>
+      <input type="password" id="loginPassword" placeholder="Password" required><br>
+      <button id="loginButton" style="margin-top: 5px;">Login</button>
+    </div>
+    <div id="signupForm" style="margin-top:10px;">
+      <h3>Sign Up</h3>
+      <input type="email" id="signupEmail" placeholder="Email" required><br>
+      <input type="password" id="signupPassword" placeholder="Password" required><br>
+      <button id="signupButton" style="margin-top: 5px;">Sign Up</button>
+    </div>
+    <button id="logoutButton" style="margin-top: 10px; display: none;">Logout</button>
+  </div>
   <h1>Taylan's Enhanced Game</h1>
   <div id="scoreBoard">Score: <span id="score">0</span></div>
   <div id="highScoreBoard">High Score: <span id="highScore">0</span></div>
@@ -269,11 +323,11 @@
   <audio id="gameMusic" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/AC_250601194725.mp3" loop></audio>
   <audio id="gameOverSound" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/END%20OF%20GAME%20SOUND.mp3"></audio>
   <audio id="staceyClickSound" src="https://github.com/tay198/Stacey-saying-owe/raw/refs/heads/main/Stacey%20saying%20ouch.m4a"></audio>
-  <audio id="jakePenaltySound" src="YOUR_JAKE_PENALTY_SOUND.mp3"></audio> <audio id="powerUpSound" src="YOUR_POWERUP_COLLECT_SOUND.mp3"></audio>
+  <audio id="jakePenaltySound" src="YOUR_JAKE_PENALTY_SOUND.mp3"></audio>
+  <audio id="powerUpSound" src="YOUR_POWERUP_COLLECT_SOUND.mp3"></audio>
   <audio id="bystanderSound" src="YOUR_BYSTANDER_HIT_SOUND.mp3"></audio>
   <audio id="comboSound" src="YOUR_COMBO_SOUND.mp3"></audio>
   <audio id="jailBarSound" src="YOUR_JAIL_BAR_SLAM_SOUND.mp3"></audio>
-
 
   <button id="startButton">Start Game</button>
   <button id="showInstructionsButton">How to Play</button>
@@ -285,6 +339,57 @@
       <button id="closeInstructionsButton">Got It!</button>
     </div>
   </div>
+
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc 
+    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbYpT5ayO9ndNb34YkndY-UEobEPjoXGo", //REPLACE WITH YOUR ACTUAL API KEY
+      authDomain: "taylans-game-9470b.firebaseapp.com",
+      projectId: "taylans-game-9470b",
+      storageBucket: "taylans-game-9470b.firebasestorage.app",
+      messagingSenderId: "556518485303",
+      appId: "1:556518485303:web:dd605fa83eabc3013cfeb2",
+      measurementId: "G-B78NZZWVT9"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Expose functions to global scope for the game script
+    window.fbAuth = {
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      auth 
+    };
+    window.fbDb = {
+      doc,
+      setDoc,
+      getDoc,
+      db 
+    };
+  </script>
 
   <script>
     const gameArea = document.getElementById('gameArea');
@@ -301,7 +406,7 @@
     const music = document.getElementById('gameMusic');
     const gameOverSoundEffect = document.getElementById('gameOverSound');
     const staceyClickSfx = document.getElementById('staceyClickSound');
-    const jakePenaltySfx = document.getElementById('jakePenaltySound'); // Consider using gameOverSoundEffect here if it's the same
+    const jakePenaltySfx = document.getElementById('jakePenaltySound');
     const powerUpSfx = document.getElementById('powerUpSound');
     const bystanderSfx = document.getElementById('bystanderSound');
     const comboSfx = document.getElementById('comboSound');
@@ -312,7 +417,7 @@
     const jailBarsOverlay = document.getElementById('jailBarsOverlay');
 
     const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg';
-    const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg'; // Check if this URL is working for you
+    const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg';
     const bystanderURL = 'https://via.placeholder.com/60/808080/FFFFFF?text=Byst';
     const timePowerUpURL = 'https://via.placeholder.com/60/0000FF/FFFFFF?text=Time';
     const scorePowerUpURL = 'https://via.placeholder.com/60/FFD700/000000?text=Score';
@@ -321,7 +426,7 @@
         initialTime: 30,
         baseSpawnInterval: 950,
         minSpawnInterval: 400,
-        jakeBaseProb: 0.20, // Jake has a 30% chance to spawn initially
+        jakeBaseProb: 0.20,
         jakeMaxProb: 0.40,
         powerUpProb: 0.10,
         bystanderProb: 0.15,
@@ -342,27 +447,167 @@
     let gameInterval, spawnIntervalId, animationIntervalId;
     let gameActive = false;
     let hitJakeInGameOver = false;
-
     let comboCount = 0;
     let comboTimeout;
-
     let flickerInterval = null;
     let originalBodyBackground = getComputedStyle(document.body).getPropertyValue('--original-bg');
     let isFlickerRed = false;
     let gameOverFlickerTimeout = null; 
-
     let currentSpawnInterval = gameSettings.baseSpawnInterval;
     let currentJakeProb = gameSettings.jakeBaseProb;
-
     let activeScoreMultiplier = 1;
     let scoreMultiplierTimeout;
+    let currentUserId = null; // To store Firebase User ID
+
+    // --- Firebase Auth & DB Interaction ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.fbAuth || !window.fbDb) {
+            console.error("Firebase services not available. Ensure Firebase module script runs first and exposes fbAuth/fbDb.");
+            // Fallback for user status display if Firebase isn't ready
+            const userAuthStatusEl = document.getElementById('userAuthStatus');
+            if (userAuthStatusEl) userAuthStatusEl.textContent = "Firebase not loaded. Please refresh.";
+            return;
+        }
+
+        const authInstance = window.fbAuth.auth;
+        const dbInstance = window.fbDb.db;
+
+        const userAuthStatus = document.getElementById('userAuthStatus');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const logoutButton = document.getElementById('logoutButton');
+        
+        const loginEmailInput = document.getElementById('loginEmail');
+        const loginPasswordInput = document.getElementById('loginPassword');
+        const loginButton = document.getElementById('loginButton');
+
+        const signupEmailInput = document.getElementById('signupEmail');
+        const signupPasswordInput = document.getElementById('signupPassword');
+        const signupButton = document.getElementById('signupButton');
+
+        window.fbAuth.onAuthStateChanged(authInstance, user => {
+            if (user) {
+                currentUserId = user.uid;
+                userAuthStatus.textContent = `Logged in as: ${user.email}`;
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'none';
+                logoutButton.style.display = 'inline-block';
+                console.log("User logged in:", user.email);
+                loadHighScore(); 
+            } else {
+                currentUserId = null;
+                userAuthStatus.textContent = 'Not logged in';
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'block';
+                logoutButton.style.display = 'none';
+                console.log("User logged out");
+                highScore = 0; 
+                if(highScoreDisplay) highScoreDisplay.textContent = highScore; 
+                loadHighScore(); // Load local if preferred
+            }
+             // Enable start button regardless of login status for now
+             if(startButton) startButton.disabled = false;
+        });
+
+        signupButton.addEventListener('click', () => {
+            const email = signupEmailInput.value;
+            const password = signupPasswordInput.value;
+            if (!email || !password) { alert("Please enter email and password."); return; }
+            window.fbAuth.createUserWithEmailAndPassword(authInstance, email, password)
+                .then(userCredential => {
+                    console.log("Signed up:", userCredential.user.email);
+                    const userDocRef = window.fbDb.doc(dbInstance, "userScores", userCredential.user.uid);
+                    return window.fbDb.setDoc(userDocRef, { highScore: 0, email: userCredential.user.email }, { merge: true });
+                })
+                .then(() => {
+                     console.log("Initial user score document created/merged.");
+                     signupEmailInput.value = ''; // Clear fields
+                     signupPasswordInput.value = '';
+                })
+                .catch(error => {
+                    console.error("Signup error:", error.message);
+                    alert("Signup failed: " + error.message);
+                });
+        });
+
+        loginButton.addEventListener('click', () => {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            if (!email || !password) { alert("Please enter email and password."); return; }
+            window.fbAuth.signInWithEmailAndPassword(authInstance, email, password)
+                .then(userCredential => {
+                    console.log("Logged in:", userCredential.user.email);
+                    loginEmailInput.value = ''; // Clear fields
+                    loginPasswordInput.value = '';
+                })
+                .catch(error => {
+                    console.error("Login error:", error.message);
+                    alert("Login failed: " + error.message);
+                });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            window.fbAuth.signOut(authInstance).catch(error => {
+                console.error("Logout error:", error.message);
+            });
+        });
+    }); // End of DOMContentLoaded for Firebase Auth UI
+
+    async function saveScoreToFirebase(userId, newScoreToSave) {
+        if (!userId || !window.fbDb || !window.fbDb.db) {
+            console.log("No user logged in or Firebase DB not ready. Score not saved to Firebase.");
+            return;
+        }
+        console.log(`Attempting to save score ${newScoreToSave} for user ${userId}`);
+        try {
+            const userDocRef = window.fbDb.doc(window.fbDb.db, "userScores", userId);
+            const docSnap = await window.fbDb.getDoc(userDocRef);
+            let currentFirebaseHighScore = 0;
+            if (docSnap.exists()) {
+                currentFirebaseHighScore = docSnap.data().highScore || 0;
+            }
+            
+            if (newScoreToSave > currentFirebaseHighScore) {
+                await window.fbDb.setDoc(userDocRef, { highScore: newScoreToSave }, { merge: true });
+                console.log("New high score saved to Firebase:", newScoreToSave);
+                highScore = newScoreToSave; 
+                if(highScoreDisplay) highScoreDisplay.textContent = highScore;
+            } else {
+                console.log(`Score ${newScoreToSave} not higher than Firebase high score ${currentFirebaseHighScore}. Not updated.`);
+            }
+        } catch (error) {
+            console.error("Error saving score to Firebase:", error);
+        }
+    }
+
+    async function loadHighScoreFromFirebase(userId) {
+        if (!userId || !window.fbDb || !window.fbDb.db) {
+            console.log("No user logged in or Firebase DB not ready. Cannot load score from Firebase.");
+            return 0;
+        }
+        try {
+            const userDocRef = window.fbDb.doc(window.fbDb.db, "userScores", userId);
+            const docSnap = await window.fbDb.getDoc(userDocRef);
+            if (docSnap.exists()) {
+                const firebaseHighScore = docSnap.data().highScore || 0;
+                console.log("Score loaded from Firebase:", firebaseHighScore);
+                return firebaseHighScore;
+            } else {
+                console.log("No score document found for user in Firebase. Creating one with highScore 0.");
+                await window.fbDb.setDoc(userDocRef, { highScore: 0 }); // Create doc if not exists
+                return 0;
+            }
+        } catch (error) {
+            console.error("Error loading score from Firebase:", error);
+            return 0; 
+        }
+    }
+    // --- End Firebase ---
 
     function playSound(soundElement) {
         if (soundElement && soundElement.src && soundElement.src !== window.location.href && !soundElement.src.endsWith('null') && !soundElement.src.endsWith('undefined') && !soundElement.src.includes('YOUR_')) {
             soundElement.currentTime = 0;
             soundElement.play().catch(error => console.warn("Audio play error:", error.message, "for", soundElement.src));
-        } else if (soundElement && soundElement.src && soundElement.src.includes('YOUR_')) {
-            // console.log("Skipping placeholder sound:", soundElement.src); // Optional: log placeholder skips
         }
     }
 
@@ -371,75 +616,89 @@
         popup.textContent = (value > 0 ? '+' : '') + value;
         popup.className = 'score-popup';
         popup.style.color = value > 0 ? 'gold' : 'red';
-
         const itemRect = element.getBoundingClientRect();
         const gameAreaRect = gameArea.getBoundingClientRect();
         popup.style.left = (itemRect.left - gameAreaRect.left + element.offsetWidth / 2 - 15) + 'px';
         popup.style.top = (itemRect.top - gameAreaRect.top - 10) + 'px';
-
         gameArea.appendChild(popup);
-        setTimeout(() => {
-            if (popup.parentNode) popup.remove();
-        }, 700);
+        setTimeout(() => { if (popup.parentNode) popup.remove(); }, 700);
     }
 
     function updateActivePowerUpsDisplay() {
         let displayHTML = "";
-        if (activeScoreMultiplier > 1) {
-            displayHTML += `Double Score Active! `;
-        }
+        if (activeScoreMultiplier > 1) { displayHTML += `Double Score Active! `; }
         activePowerUpsDisplay.innerHTML = displayHTML;
     }
 
     function showInstructions() {
       instructionModal.style.display = 'flex';
-      startButton.disabled = true;
+      if(startButton) startButton.disabled = true;
     }
     function hideInstructions() {
       instructionModal.style.display = 'none';
       localStorage.setItem('instructionsShown', 'true');
-      startButton.disabled = false;
+      if(startButton && !gameActive) startButton.disabled = false; // Only enable if game not active
+    }
+    
+    // Ensure loadHighScore is async to work with Firebase
+    async function loadHighScore() {
+        if (currentUserId) { // Check if a user is logged in (Firebase)
+            highScore = await loadHighScoreFromFirebase(currentUserId);
+        } else {
+            // Fallback to localStorage if no user logged in
+            highScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
+            console.log("Loaded high score from localStorage (no user logged in).");
+        }
+        if(highScoreDisplay) highScoreDisplay.textContent = highScore;
     }
 
+    // Ensure saveHighScore uses the global score variable
+    function saveHighScore() { 
+        if (currentUserId) { // Check if a user is logged in (Firebase)
+            saveScoreToFirebase(currentUserId, score); 
+        } else {
+            // Fallback or if you want to always save locally too for non-logged-in users
+            const localHighScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
+            if (score > localHighScore) {
+                localStorage.setItem('taylanGameHighScore', score.toString());
+                console.log("Saved high score to localStorage (no user logged in).");
+                if(!currentUserId) { // Update display only if Firebase didn't handle it
+                    highScore = score;
+                   if(highScoreDisplay) highScoreDisplay.textContent = highScore;
+                }
+            }
+        }
+    }
+
+
     window.addEventListener('load', () => {
-      loadHighScore();
+      // loadHighScore(); // Moved to be called after auth state is known or DOMContentLoaded
       if (localStorage.getItem('instructionsShown') !== 'true') {
         showInstructions();
       } else {
-        startButton.disabled = false;
+        if(startButton) startButton.disabled = false;
       }
-
       if (music) music.volume = 0.3; 
       if (staceyClickSfx) staceyClickSfx.volume = 1.0; 
-      if (gameOverSoundEffect) gameOverSoundEffect.volume = 0.6; // Example volume for game over
-
-
+      if (gameOverSoundEffect) gameOverSoundEffect.volume = 0.6;
       if (staceyClickSfx.src && staceyClickSfx.src !== window.location.href && !staceyClickSfx.src.includes("YOUR_")) {
         staceyClickSfx.preload = 'auto';
         staceyClickSfx.load();
+      }
+      // Initial call to loadHighScore is now better handled by onAuthStateChanged or DOMContentLoaded
+      // but for non-logged-in state, ensure it's loaded once.
+      if (!currentUserId) {
+          loadHighScore();
       }
     });
 
     closeInstructionsButton.addEventListener('click', hideInstructions);
     showInstructionsButton.addEventListener('click', showInstructions);
 
-    function loadHighScore() {
-        highScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
-        highScoreDisplay.textContent = highScore;
-    }
-    function saveHighScore() {
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('taylanGameHighScore', highScore.toString());
-            highScoreDisplay.textContent = highScore;
-        }
-    }
-
     function updateDifficulty() {
         const difficultyFactor = Math.floor(score / gameSettings.difficultyScoreThreshold);
         currentSpawnInterval = Math.max(gameSettings.minSpawnInterval, gameSettings.baseSpawnInterval - difficultyFactor * 50);
         currentJakeProb = Math.min(gameSettings.jakeMaxProb, gameSettings.jakeBaseProb + difficultyFactor * 0.02);
-
         if (gameActive && spawnIntervalId) {
             clearInterval(spawnIntervalId);
             spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
@@ -451,382 +710,219 @@
         const items = gameArea.querySelectorAll('.item-face');
         const gameAreaWidth = gameArea.clientWidth;
         const gameAreaHeight = gameArea.clientHeight;
-
         items.forEach(item => {
-            if (item.dx === 0 && item.dy === 0) return; // Already processed (e.g. clicked)
-            if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return; // Not yet fully initialized with movement
-
+            if (item.dx === 0 && item.dy === 0) return; 
+            if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return;
             let currentX = parseFloat(item.style.left);
             let currentY = parseFloat(item.style.top);
             const itemWidth = item.offsetWidth;
             const itemHeight = item.offsetHeight;
-
             currentX += item.dx;
             currentY += item.dy;
-
-            if (currentX <= 0) {
-                currentX = 0;
-                item.dx *= -1;
-            } else if (currentX + itemWidth >= gameAreaWidth) {
-                currentX = gameAreaWidth - itemWidth;
-                item.dx *= -1;
-            }
-
-            if (currentY <= 0) {
-                currentY = 0;
-                item.dy *= -1;
-            } else if (currentY + itemHeight >= gameAreaHeight) {
-                currentY = gameAreaHeight - itemHeight;
-                item.dy *= -1;
-            }
-
+            if (currentX <= 0) { currentX = 0; item.dx *= -1; } 
+            else if (currentX + itemWidth >= gameAreaWidth) { currentX = gameAreaWidth - itemWidth; item.dx *= -1; }
+            if (currentY <= 0) { currentY = 0; item.dy *= -1; } 
+            else if (currentY + itemHeight >= gameAreaHeight) { currentY = gameAreaHeight - itemHeight; item.dy *= -1; }
             item.style.left = currentX + 'px';
             item.style.top = currentY + 'px';
         });
     }
 
-
     function spawnItem() {
       if (!gameActive) return;
-
       let itemType = 'stacey';
       let itemURL = staceyURL;
-      let points = gameSettings.pointsPerStacey;
       let isPowerUp = false;
-
       const rand = Math.random();
-
-      if (rand < currentJakeProb) {
-        itemType = 'jake';
-        itemURL = jakeURL;
-      } else if (rand < currentJakeProb + gameSettings.powerUpProb) {
+      if (rand < currentJakeProb) { itemType = 'jake'; itemURL = jakeURL; } 
+      else if (rand < currentJakeProb + gameSettings.powerUpProb) {
         isPowerUp = true;
-        if (Math.random() < 0.5) {
-            itemType = 'timePowerUp';
-            itemURL = timePowerUpURL;
-        } else {
-            itemType = 'scorePowerUp';
-            itemURL = scorePowerUpURL;
-        }
+        if (Math.random() < 0.5) { itemType = 'timePowerUp'; itemURL = timePowerUpURL; } 
+        else { itemType = 'scorePowerUp'; itemURL = scorePowerUpURL; }
       } else if (rand < currentJakeProb + gameSettings.powerUpProb + gameSettings.bystanderProb) {
-        itemType = 'bystander';
-        itemURL = bystanderURL;
+        itemType = 'bystander'; itemURL = bystanderURL;
       }
 
-      if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) { // This specific check might miss other placeholder patterns
-          console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`);
-          return;
+      if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) {
+          console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`); return;
       }
-       // A more general check for common placeholder services
       if (itemURL.includes('via.placeholder.com') && (itemType === 'jake' || itemType === 'stacey')) {
-           console.warn(`Skipping critical item ${itemType} due to placeholder image URL from via.placeholder.com: ${itemURL}`);
-           return; // Optionally prevent critical items if they are placeholders
+           console.warn(`Skipping critical item ${itemType} due to placeholder image URL from via.placeholder.com: ${itemURL}`); return;
       }
-
 
       const img = document.createElement('img');
-      img.src = itemURL;
-      img.alt = itemType;
-      img.classList.add('item-face');
+      img.src = itemURL; img.alt = itemType; img.classList.add('item-face');
       if (isPowerUp) img.classList.add('powerup-icon');
-      img.setAttribute('draggable', 'false');
-      img.dataset.itemType = itemType;
-
+      img.setAttribute('draggable', 'false'); img.dataset.itemType = itemType;
       img.onerror = function() {
           console.error(`Error loading image: ${itemURL} for item type: ${itemType}. Removing element.`);
           if(itemType === 'jake') console.error("CRITICAL: Jake image failed to load!");
           if (img.parentNode) img.remove();
       };
-      img.onload = function() {
-        // Optional: if you want to log successful loads for debugging image issues
-        // if(itemType === 'jake') console.log("Jake image loaded successfully:", itemURL);
-      }
-
       const itemSize = 60;
       const x = Math.random() * (gameArea.clientWidth - itemSize);
       const y = Math.random() * (gameArea.clientHeight - itemSize);
-      img.style.left = x + 'px';
-      img.style.top = y + 'px';
-
+      img.style.left = x + 'px'; img.style.top = y + 'px';
       const speed = gameSettings.itemBaseSpeed + Math.random() * gameSettings.itemSpeedVariance;
       const angle = Math.random() * 2 * Math.PI;
-      img.dx = Math.cos(angle) * speed;
-      img.dy = Math.sin(angle) * speed;
+      img.dx = Math.cos(angle) * speed; img.dy = Math.sin(angle) * speed;
       if (itemType === 'jake') { 
           img.dx = Math.cos(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
           img.dy = Math.sin(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
       }
 
-
       img.addEventListener('click', (event) => {
         if (!gameActive || (img.dx === 0 && img.dy === 0 && !img.classList.contains('stacey-clicked'))) return;
-
-        img.dx = 0; 
-        img.dy = 0;
-
+        img.dx = 0; img.dy = 0;
         const clickedItemType = img.dataset.itemType;
 
         if (clickedItemType === 'jake') {
-          // playSound(jakePenaltySfx); // Jake penalty sound could be distinct or same as game over
-                                      // The main "game over" sound is now handled conditionally in endGame()
-          const noSymbol = document.createElement('div');
-          noSymbol.className = 'no-symbol-overlay';
-          const itemRect = img.getBoundingClientRect();
-          const gameAreaRect = gameArea.getBoundingClientRect();
+          const noSymbol = document.createElement('div'); noSymbol.className = 'no-symbol-overlay';
+          const itemRect = img.getBoundingClientRect(); const gameAreaRect = gameArea.getBoundingClientRect();
           noSymbol.style.left = (itemRect.left - gameAreaRect.left + (img.offsetWidth / 2) - 35) + 'px';
           noSymbol.style.top = (itemRect.top - gameAreaRect.top + (img.offsetHeight / 2) - 35) + 'px';
           gameArea.appendChild(noSymbol);
-
-          const flash = document.createElement('div');
-          flash.id = 'screenFlashOverlay';
-          if (document.getElementById('screenFlashOverlay')) {
-            document.getElementById('screenFlashOverlay').remove();
-          }
+          const flash = document.createElement('div'); flash.id = 'screenFlashOverlay';
+          if (document.getElementById('screenFlashOverlay')) { document.getElementById('screenFlashOverlay').remove(); }
           gameArea.appendChild(flash);
-
           if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-          hitJakeInGameOver = true;
-          endGame();
+          hitJakeInGameOver = true; endGame();
         } else if (clickedItemType === 'stacey') {
-          playSound(staceyClickSfx);
-          img.classList.add('stacey-clicked');
-
+          playSound(staceyClickSfx); img.classList.add('stacey-clicked');
           comboCount++;
           const pointsEarned = gameSettings.pointsPerStacey * (comboCount > 1 ? gameSettings.comboBonusMultiplier : 1) * activeScoreMultiplier;
-          score += pointsEarned;
-          scoreDisplay.textContent = score;
+          score += pointsEarned; scoreDisplay.textContent = score;
           createScorePopup(pointsEarned, img);
-
           comboDisplay.textContent = comboCount > 1 ? `Combo: ${comboCount}x!` : '';
           if (comboCount > 1) {
-            playSound(comboSfx);
-            comboDisplay.classList.add('active');
+            playSound(comboSfx); comboDisplay.classList.add('active');
             setTimeout(() => comboDisplay.classList.remove('active'), 300);
           }
-
           clearTimeout(comboTimeout);
-          comboTimeout = setTimeout(() => {
-            comboCount = 0;
-            comboDisplay.textContent = '';
-          }, 2000);
-
-          if (navigator.vibrate) navigator.vibrate(30);
-          updateDifficulty();
+          comboTimeout = setTimeout(() => { comboCount = 0; comboDisplay.textContent = ''; }, 2000);
+          if (navigator.vibrate) navigator.vibrate(30); updateDifficulty();
         } else if (clickedItemType === 'bystander') {
-            playSound(bystanderSfx);
-            score = Math.max(0, score - gameSettings.bystanderPenalty);
-            scoreDisplay.textContent = score;
-            createScorePopup(-gameSettings.bystanderPenalty, img);
-            comboCount = 0;
-            comboDisplay.textContent = '';
+            playSound(bystanderSfx); score = Math.max(0, score - gameSettings.bystanderPenalty);
+            scoreDisplay.textContent = score; createScorePopup(-gameSettings.bystanderPenalty, img);
+            comboCount = 0; comboDisplay.textContent = '';
             if (navigator.vibrate) navigator.vibrate(50);
         } else if (clickedItemType === 'timePowerUp') {
-            playSound(powerUpSfx);
-            timeLeft += gameSettings.timePowerUpValue;
-            timeDisplay.textContent = timeLeft;
-            // Adjust visual timer correctly if max time can now exceed initial time
-            const currentMaxTime = Math.max(gameSettings.initialTime, timeLeft + gameSettings.timePowerUpValue); // Consider current time after adding
+            playSound(powerUpSfx); timeLeft += gameSettings.timePowerUpValue; timeDisplay.textContent = timeLeft;
+            const currentMaxTime = Math.max(gameSettings.initialTime, timeLeft);
             visualTimerBar.style.width = Math.min(100, (timeLeft / currentMaxTime) * 100) + '%';
-
             createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         } else if (clickedItemType === 'scorePowerUp') {
-            playSound(powerUpSfx);
-            activeScoreMultiplier = gameSettings.scorePowerUpMultiplier;
-            updateActivePowerUpsDisplay();
-            createScorePopup(`x${gameSettings.scorePowerUpMultiplier} Score!`, img);
+            playSound(powerUpSfx); activeScoreMultiplier = gameSettings.scorePowerUpMultiplier;
+            updateActivePowerUpsDisplay(); createScorePopup(`x${gameSettings.scorePowerUpMultiplier} Score!`, img);
             clearTimeout(scoreMultiplierTimeout);
-            scoreMultiplierTimeout = setTimeout(() => {
-                activeScoreMultiplier = 1;
-                updateActivePowerUpsDisplay();
-            }, gameSettings.scorePowerUpDuration);
+            scoreMultiplierTimeout = setTimeout(() => { activeScoreMultiplier = 1; updateActivePowerUpsDisplay(); }, gameSettings.scorePowerUpDuration);
         }
-
         img.style.pointerEvents = 'none'; 
         if (clickedItemType !== 'stacey') { 
-            setTimeout(() => {
-                if (img.parentNode) img.remove();
-            }, isPowerUp ? 100 : 300); // Slightly faster removal for non-Stacey non-powerup clicks
+            setTimeout(() => { if (img.parentNode) img.remove(); }, isPowerUp ? 100 : 300); 
         } else {
-             setTimeout(() => { 
-                if (img.parentNode) img.remove();
-            }, 300); 
+             setTimeout(() => { if (img.parentNode) img.remove(); }, 300); 
         }
       });
-
       gameArea.appendChild(img);
-      if (itemType !== 'jake') { // Non-Jake items disappear if not clicked
+      if (itemType !== 'jake') {
         setTimeout(() => {
-          // Check if item still exists, hasn't been clicked (dx/dy would be 0), and is interactive
           if (gameArea.contains(img) && (img.dx !== 0 || img.dy !== 0) && img.style.pointerEvents !== 'none') {
               if (itemType === 'stacey') { 
-                  comboCount = 0; // Reset combo if Stacey is missed
-                  comboDisplay.textContent = '';
-                  clearTimeout(comboTimeout);
+                  comboCount = 0; comboDisplay.textContent = ''; clearTimeout(comboTimeout);
               }
-              if (img.parentNode === gameArea) { 
-                gameArea.removeChild(img);
-              }
+              if (img.parentNode === gameArea) { gameArea.removeChild(img); }
           }
         }, itemType === 'bystander' || isPowerUp ? 3000 : 2500); 
       }
     }
 
     function updateTimer() {
-      timeLeft--;
-      timeDisplay.textContent = timeLeft;
+      timeLeft--; timeDisplay.textContent = timeLeft;
       const percentageLeft = Math.max(0,(timeLeft / gameSettings.initialTime) * 100); 
       visualTimerBar.style.width = percentageLeft + '%';
       if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336';
       else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; 
       else visualTimerBar.style.backgroundColor = '#4CAF50';
-
-
-      if (timeLeft <= 0) {
-        timeLeft = 0; 
-        timeDisplay.textContent = timeLeft;
-        // hitJakeInGameOver should be false here if time runs out
-        endGame(); // hitJakeInGameOver is false by default unless set by clicking Jake
-      }
+      if (timeLeft <= 0) { timeLeft = 0; timeDisplay.textContent = timeLeft; endGame(); }
     }
 
     function toggleBackgroundColorFlicker() {
-        if (isFlickerRed) {
-            document.body.style.background = 'rgba(0,0,255,0.3)'; 
-        } else {
-            document.body.style.background = 'rgba(255,0,0,0.3)'; 
-        }
+        if (isFlickerRed) { document.body.style.background = 'rgba(0,0,255,0.3)'; } 
+        else { document.body.style.background = 'rgba(255,0,0,0.3)'; }
         isFlickerRed = !isFlickerRed;
     }
 
     function startGame() {
       if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
       if (flickerInterval) clearInterval(flickerInterval); 
-
       document.body.style.background = originalBodyBackground; 
-
-      gameOverSoundEffect.pause();
-      gameOverSoundEffect.currentTime = 0;
+      gameOverSoundEffect.pause(); gameOverSoundEffect.currentTime = 0;
       if (jailBarSfx.src && jailBarSfx.src !== window.location.href && !jailBarSfx.src.includes('YOUR_')) {
-        jailBarSfx.pause();
-        jailBarSfx.currentTime = 0;
+        jailBarSfx.pause(); jailBarSfx.currentTime = 0;
       }
-      // Also pause jakePenaltySfx if it's a separate sound that might have been playing
       if (jakePenaltySfx.src && jakePenaltySfx.src !== window.location.href && !jakePenaltySfx.src.includes('YOUR_')) {
-        jakePenaltySfx.pause();
-        jakePenaltySfx.currentTime = 0;
+        jakePenaltySfx.pause(); jakePenaltySfx.currentTime = 0;
       }
-
-
-      gameActive = true;
-      hitJakeInGameOver = false; // Reset this flag at the start of each game
-      score = 0;
-      timeLeft = gameSettings.initialTime;
-      comboCount = 0;
-      activeScoreMultiplier = 1;
-      currentSpawnInterval = gameSettings.baseSpawnInterval;
-      currentJakeProb = gameSettings.jakeBaseProb;
-
-      scoreDisplay.textContent = score;
-      timeDisplay.textContent = timeLeft;
-      visualTimerBar.style.width = '100%';
-      visualTimerBar.style.backgroundColor = '#4CAF50';
-      comboDisplay.textContent = '';
-      gameOverMessage.style.display = 'none';
+      gameActive = true; hitJakeInGameOver = false; score = 0;
+      timeLeft = gameSettings.initialTime; comboCount = 0; activeScoreMultiplier = 1;
+      currentSpawnInterval = gameSettings.baseSpawnInterval; currentJakeProb = gameSettings.jakeBaseProb;
+      scoreDisplay.textContent = score; timeDisplay.textContent = timeLeft;
+      visualTimerBar.style.width = '100%'; visualTimerBar.style.backgroundColor = '#4CAF50';
+      comboDisplay.textContent = ''; gameOverMessage.style.display = 'none';
       jailBarsOverlay.classList.remove('active');
       document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
-          b.style.animation = 'none';
-          b.offsetHeight; 
-          b.style.animation = ''; 
-          b.style.height = '0%'; 
+          b.style.animation = 'none'; b.offsetHeight; b.style.animation = ''; b.style.height = '0%'; 
       });
-
-      updateActivePowerUpsDisplay();
-      clearTimeout(scoreMultiplierTimeout);
-
-      startButton.textContent = 'Game in Progress...';
-      startButton.disabled = true;
-      showInstructionsButton.disabled = true;
-
-      clearGameElements();
-
+      updateActivePowerUpsDisplay(); clearTimeout(scoreMultiplierTimeout);
+      startButton.textContent = 'Game in Progress...'; startButton.disabled = true;
+      showInstructionsButton.disabled = true; clearGameElements();
       if (music.src && music.src !== window.location.href && !music.src.includes('YOUR_')) {
         music.play().catch(error => console.warn("Music play error:", error.message));
       }
-
-      isFlickerRed = false; 
-      flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
-
+      isFlickerRed = false; flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
       if(spawnIntervalId) clearInterval(spawnIntervalId);
       spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
-
       if(gameInterval) clearInterval(gameInterval);
       gameInterval = setInterval(updateTimer, 1000);
-
       if(animationIntervalId) clearInterval(animationIntervalId);
       animationIntervalId = setInterval(updateItemPositions, 50); 
     }
 
     function endGame() {
-      const wasAlreadyOver = !gameActive; // Check if game was already ended to prevent re-triggering sounds/effects
-      gameActive = false; 
-
-      clearInterval(spawnIntervalId);
-      clearInterval(gameInterval);
+      const wasAlreadyOver = !gameActive; gameActive = false; 
+      clearInterval(spawnIntervalId); clearInterval(gameInterval);
       if (animationIntervalId) clearInterval(animationIntervalId); 
-      clearTimeout(comboTimeout);
-      clearTimeout(scoreMultiplierTimeout);
-
+      clearTimeout(comboTimeout); clearTimeout(scoreMultiplierTimeout);
       if (flickerInterval) clearInterval(flickerInterval);
       if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
-
-      saveHighScore();
+      saveHighScore(); // This will now try to save to Firebase if user is logged in
 
       if (hitJakeInGameOver) {
           gameOverMessage.innerHTML = `YOU KILLED JAKE!<br>YOUR UNDER ARREST FOR KILLING A COP!<br>Final Score: ${score}`;
-          playSound(jailBarSfx); // Sound for bars slamming
-          // Potentially play jakePenaltySfx here as well if it's specifically for the "busted" moment
-          // and distinct from the main gameOverSound.
-          // playSound(jakePenaltySfx); 
-
+          playSound(jailBarSfx); 
           jailBarsOverlay.classList.add('active');
           document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
-            b.style.animation = 'none'; 
-            b.offsetHeight; 
-            b.style.animationName = 'dropJailBar'; 
-            b.style.animationDuration = '0.6s';
-            b.style.animationTimingFunction = 'ease-in-out';
-            b.style.animationFillMode = 'forwards';
+            b.style.animation = 'none'; b.offsetHeight; 
+            b.style.animationName = 'dropJailBar'; b.style.animationDuration = '0.6s';
+            b.style.animationTimingFunction = 'ease-in-out'; b.style.animationFillMode = 'forwards';
             const index = Array.from(b.parentNode.children).indexOf(b);
             b.style.animationDelay = `${index * 0.05}s`;
           });
       } else {
           gameOverMessage.innerHTML = `Time's Up!<br>You caught her, Stacey's under arrest!!<br>Final Score: ${score}`;
-          // No game over sound here if time runs out, as per request
       }
       gameOverMessage.style.display = 'block';
-
-      startButton.textContent = 'Restart Game';
-      startButton.disabled = false;
+      startButton.textContent = 'Restart Game'; startButton.disabled = false;
       showInstructionsButton.disabled = false; 
-
       if (music.src && music.src !== window.location.href && !music.src.includes('YOUR_')) {
-        music.pause();
-        music.currentTime = 0;
+        music.pause(); music.currentTime = 0;
       }
-
-      // *** MODIFIED SOUND LOGIC ***
-      if (!wasAlreadyOver && hitJakeInGameOver) { 
-          playSound(gameOverSoundEffect); // Play game over sound ONLY if Jake was hit
-      }
-      // *** END OF MODIFIED SOUND LOGIC ***
-
-
+      if (!wasAlreadyOver && hitJakeInGameOver) { playSound(gameOverSoundEffect); }
       flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
       gameOverFlickerTimeout = setTimeout(() => {
           clearInterval(flickerInterval); 
-          if (!gameActive) { 
-            document.body.style.background = originalBodyBackground;
-          }
+          if (!gameActive) { document.body.style.background = originalBodyBackground; }
       }, 10000); 
     }
 
@@ -834,8 +930,7 @@
         gameArea.querySelectorAll('.item-face, .no-symbol-overlay, .score-popup, #screenFlashOverlay').forEach(el => el.remove());
     }
 
-    startButton.addEventListener('click', startGame);
-
+    if(startButton) startButton.addEventListener('click', startGame);
   </script>
 </body>
 </html>
