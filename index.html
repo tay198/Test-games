@@ -1,936 +1,439 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Taylan's Enhanced Game</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tay's Super Cool Flappy Game</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      --original-bg: linear-gradient(135deg, #e0f7fa, #c5e1a5);
-      background: var(--original-bg);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
+    /* Basic reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden; /* Prevent scrolling */
+      font-family: 'Press Start 2P', cursive; /* Use the pixel-art font */
+      background: #70c5ce; /* Sky blue background */
+      display: flex; /* Center the canvas */
+      justify-content: center;
       align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding-top: 10px;
     }
-    h1 {
-      font-size: 1.8em;
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-    #authContainer {
-        margin-bottom: 15px;
-        padding: 10px;
-        background-color: #f0f0f0;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        text-align: center;
-        width: 90vw;
-        max-width: 450px;
-    }
-    #authContainer input[type="email"],
-    #authContainer input[type="password"] {
-        margin-bottom: 5px;
-        padding: 8px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        width: calc(100% - 20px);
-    }
-    #authContainer button {
-        padding: 8px 15px;
-        font-size: 0.9em;
-        background-color: #28a745;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    #authContainer button:hover {
-        background-color: #218838;
-    }
-    #logoutButton {
-        background-color: #dc3545 !important;
-    }
-    #logoutButton:hover {
-        background-color: #c82333 !important;
-    }
-    #scoreBoard, #highScoreBoard, #timer, #combo {
-      margin: 3px;
-      font-size: 17px;
-      color: #333;
-      min-height: 22px;
-    }
-    #highScoreBoard { color: #b8860b; }
-    #combo.active {
-        animation: comboPulse 0.3s ease-in-out;
-        font-weight: bold;
-    }
-    @keyframes comboPulse {
-        0% { transform: scale(1.1); color: gold; }
-        50% { transform: scale(1.25); color: orange; }
-        100% { transform: scale(1.1); color: gold; }
+    canvas {
+      display: block; /* Remove extra space below canvas */
+      margin: auto; /* Center canvas horizontally */
+      background: #70c5ce; /* Fallback background for canvas */
+      border: 5px solid #333; /* A visible border for the game area */
+      box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Subtle shadow for depth */
+      cursor: pointer; /* Indicates it's interactive */
     }
 
-    #visualTimer {
-        width: 90vw;
-        max-width: 450px;
-        height: 10px;
-        background-color: #ccc;
-        border-radius: 5px;
-        margin-bottom: 8px;
-        overflow: hidden;
-        border: 1px solid #bbb;
-    }
-    #visualTimerBar {
-        width: 100%;
-        height: 100%;
-        background-color: #4CAF50;
-        border-radius: 5px;
-        transition: width 0.5s linear;
-    }
-
-    #gameArea {
-      position: relative;
-      width: 90vw;
-      height: 60vh;
-      max-width: 450px;
-      max-height: 600px;
-      background-color: #fff;
-      border: 2px solid #333;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      overflow: hidden;
-    }
-    .item-face {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 50%;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.1s ease-out;
-    }
-    .item-face:active {
-        transform: scale(0.9);
-    }
-    .stacey-clicked {
-        animation: staceyGotClicked 0.3s ease-out forwards;
-    }
-    @keyframes staceyGotClicked {
-        0% { transform: scale(1.1); opacity: 1;}
-        100% { transform: scale(0.5); opacity: 0;}
-    }
-
-    .sparkle {
-      animation: sparkle 0.6s ease-out forwards;
-    }
-    @keyframes sparkle {
-      0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1.2); }
-      50% { transform: scale(1.6) rotate(15deg); opacity: 0.7; filter: brightness(1.5) drop-shadow(0 0 5px gold); }
-      100% { transform: scale(0.8) rotate(-15deg); opacity: 0; filter: brightness(0.8); }
-    }
-
-    #startButton, #showInstructionsButton {
-      margin-top: 8px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    #startButton:hover, #showInstructionsButton:hover {
-        background-color: #0056b3;
-    }
-    #startButton:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-    }
-    #gameOverMessage {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 20px;
-      color: white;
-      background-color: rgba(180, 0, 0, 0.85);
-      padding: 20px;
-      border-radius: 10px;
-      font-weight: bold;
-      z-index: 10000;
-      display: none;
-      text-align: center;
-      line-height: 1.4;
-    }
-    .no-symbol-overlay {
-      position: absolute;
-      width: 70px;
-      height: 70px;
-      background-image: url('https://i.imgur.com/AhrFSJL.jpeg');
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      z-index: 500;
-      pointer-events: none;
-      opacity: 0.8;
-    }
-    #screenFlashOverlay {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: red;
-        opacity: 0;
-        z-index: 499;
-        pointer-events: none;
-        animation: screenFlashAnim 0.4s ease-out;
-    }
-    @keyframes screenFlashAnim {
-        0% { opacity: 0.6; }
-        100% { opacity: 0; }
-    }
-
-    .score-popup {
-      position: absolute;
-      font-size: 22px;
-      font-weight: bold;
-      color: gold;
-      text-shadow: 1px 1px 2px black;
-      pointer-events: none;
-      animation: scorePopupAnim 0.7s ease-out forwards;
-      z-index: 100;
-    }
-    @keyframes scorePopupAnim {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
-    }
-
-    #instructionModal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: none; justify-content: center; align-items: center;
-      z-index: 20000; padding: 15px; box-sizing: border-box;
-    }
-    #instructionModalContent {
-      background-color: #fff; padding: 25px 30px; border-radius: 10px;
-      text-align: center; max-width: 400px; width: 90%;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    #instructionModalContent h2 { margin-top: 0; color: #333; }
-    #instructionModalContent p { margin-bottom: 20px; font-size: 1em; line-height: 1.5; color: #555; }
-    #closeInstructionsButton {
-      padding: 12px 25px; font-size: 1em; background-color: #007bff;
-      color: white; border: none; border-radius: 5px; cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    #closeInstructionsButton:hover { background-color: #0056b3; }
-
-    #jailBarsOverlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      display: none; justify-content: space-around; 
-      overflow: hidden; z-index: 9000; pointer-events: none;
-      background-color: rgba(0, 0, 0, 0.15); 
-      padding-left: 1%; 
-      padding-right: 1%;
-      box-sizing: border-box;
-    }
-    #jailBarsOverlay.active { display: flex; }
-
-    .jail-bar {
-      background: linear-gradient(to right, #7d7d7d 0%, #c0c0c0 30%, #d3d3d3 50%, #c0c0c0 70%, #7d7d7d 100%); 
-      border-left: 1px solid #666; 
-      border-right: 1px solid #e0e0e0; 
-      width: 5%; 
-      max-width: 20px; 
-      min-width: 8px;  
-      height: 0%; 
-      animation: dropJailBar 0.6s forwards ease-in-out;
-      box-sizing: border-box;
-      box-shadow: inset 1px 0 1px rgba(255,255,255,0.3), 
-                  inset -1px 0 1px rgba(0,0,0,0.3),  
-                  1px 0 3px rgba(0, 0, 0, 0.5);  
-      border-radius: 2px 2px 0 0; 
-    }
-
-    .jail-bar:nth-child(1) { animation-delay: 0s; }
-    .jail-bar:nth-child(2) { animation-delay: 0.05s; }
-    .jail-bar:nth-child(3) { animation-delay: 0.1s; }
-    .jail-bar:nth-child(4) { animation-delay: 0.15s; }
-    .jail-bar:nth-child(5) { animation-delay: 0.2s; }
-    .jail-bar:nth-child(6) { animation-delay: 0.25s; }
-    .jail-bar:nth-child(7) { animation-delay: 0.3s; }
-
-    @keyframes dropJailBar {
-      from { height: 0%; transform: translateY(-100%);}
-      to   { height: 100%; transform: translateY(0); }
-    }
-
-    .powerup-icon {
-        border: 3px solid gold !important;
-        box-shadow: 0 0 10px gold;
-    }
-    #activePowerUpsDisplay {
-        margin-top: 5px;
-        font-size: 0.9em;
-        color: #333;
-        min-height: 20px;
-        text-align: center;
-    }
+    /* Import a pixel-art font from Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
   </style>
 </head>
 <body>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
 
-  <div id="authContainer">
-    <div id="userAuthStatus" style="margin-bottom: 10px; font-weight: bold;">Loading user status...</div>
-    <div id="loginForm">
-      <h3>Login</h3>
-      <input type="email" id="loginEmail" placeholder="Email" required><br>
-      <input type="password" id="loginPassword" placeholder="Password" required><br>
-      <button id="loginButton" style="margin-top: 5px;">Login</button>
-    </div>
-    <div id="signupForm" style="margin-top:10px;">
-      <h3>Sign Up</h3>
-      <input type="email" id="signupEmail" placeholder="Email" required><br>
-      <input type="password" id="signupPassword" placeholder="Password" required><br>
-      <button id="signupButton" style="margin-top: 5px;">Sign Up</button>
-    </div>
-    <button id="logoutButton" style="margin-top: 10px; display: none;">Logout</button>
-  </div>
-  <h1>Taylan's Enhanced Game</h1>
-  <div id="scoreBoard">Score: <span id="score">0</span></div>
-  <div id="highScoreBoard">High Score: <span id="highScore">0</span></div>
-  <div id="timer">Time: <span id="timeLeft">30</span>s</div>
-  <div id="visualTimer"><div id="visualTimerBar"></div></div>
-  <div id="combo" style="min-height: 24px;"></div>
-  <div id="activePowerUpsDisplay"></div>
-
-  <div id="gameArea">
-    <div id="gameOverMessage"></div>
-    <div id="jailBarsOverlay">
-      <div class="jail-bar"></div><div class="jail-bar"></div><div class="jail-bar"></div>
-      <div class="jail-bar"></div><div class="jail-bar"></div><div class="jail-bar"></div>
-      <div class="jail-bar"></div>
-    </div>
-  </div>
-
-  <audio id="gameMusic" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/AC_250601194725.mp3" loop></audio>
-  <audio id="gameOverSound" src="https://github.com/tay198/Taylans-game-music/raw/refs/heads/main/END%20OF%20GAME%20SOUND.mp3"></audio>
-  <audio id="staceyClickSound" src="https://github.com/tay198/Stacey-saying-owe/raw/refs/heads/main/Stacey%20saying%20ouch.m4a"></audio>
-  <audio id="jakePenaltySound" src="YOUR_JAKE_PENALTY_SOUND.mp3"></audio>
-  <audio id="powerUpSound" src="YOUR_POWERUP_COLLECT_SOUND.mp3"></audio>
-  <audio id="bystanderSound" src="YOUR_BYSTANDER_HIT_SOUND.mp3"></audio>
-  <audio id="comboSound" src="YOUR_COMBO_SOUND.mp3"></audio>
-  <audio id="jailBarSound" src="YOUR_JAIL_BAR_SLAM_SOUND.mp3"></audio>
-
-  <button id="startButton">Start Game</button>
-  <button id="showInstructionsButton">How to Play</button>
-
-  <div id="instructionModal">
-    <div id="instructionModalContent">
-      <h2>How to Play Taylan's Game!</h2>
-      <p>Stacey's under arrest, catch her before she runs away! But if you accidentally hit Jake, you'll be under arrest for killing a cop! Who's side are you on?</p>
-      <button id="closeInstructionsButton">Got It!</button>
-    </div>
-  </div>
-
-  <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
-    import { 
-      getAuth, 
-      createUserWithEmailAndPassword, 
-      signInWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      doc, 
-      setDoc, 
-      getDoc 
-    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyBbYpT5ayO9ndNb34YkndY-UEobEPjoXGo", //REPLACE WITH YOUR ACTUAL API KEY
-      authDomain: "taylans-game-9470b.firebaseapp.com",
-      projectId: "taylans-game-9470b",
-      storageBucket: "taylans-game-9470b.firebasestorage.app",
-      messagingSenderId: "556518485303",
-      appId: "1:556518485303:web:dd605fa83eabc3013cfeb2",
-      measurementId: "G-B78NZZWVT9"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // Expose functions to global scope for the game script
-    window.fbAuth = {
-      createUserWithEmailAndPassword,
-      signInWithEmailAndPassword,
-      signOut,
-      onAuthStateChanged,
-      auth 
-    };
-    window.fbDb = {
-      doc,
-      setDoc,
-      getDoc,
-      db 
-    };
-  </script>
+  <audio id="flapSound" src="assets/audio/flap.mp3" preload="auto"></audio>
+  <audio id="coinSound" src="assets/audio/coin.mp3" preload="auto"></audio>
+  <audio id="hitSound" src="assets/audio/hit.mp3" preload="auto"></audio>
+  <audio id="scoreSound" src="assets/audio/flap.mp3" preload="auto"></audio> <audio id="bgMusic" src="assets/audio/bg_music.mp3" loop preload="auto"></audio>
 
   <script>
-    const gameArea = document.getElementById('gameArea');
-    const scoreDisplay = document.getElementById('score');
-    const highScoreDisplay = document.getElementById('highScore');
-    const timeDisplay = document.getElementById('timeLeft');
-    const visualTimerBar = document.getElementById('visualTimerBar');
-    const comboDisplay = document.getElementById('combo');
-    const gameOverMessage = document.getElementById('gameOverMessage');
-    const startButton = document.getElementById('startButton');
-    const showInstructionsButton = document.getElementById('showInstructionsButton');
-    const activePowerUpsDisplay = document.getElementById('activePowerUpsDisplay');
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-    const music = document.getElementById('gameMusic');
-    const gameOverSoundEffect = document.getElementById('gameOverSound');
-    const staceyClickSfx = document.getElementById('staceyClickSound');
-    const jakePenaltySfx = document.getElementById('jakePenaltySound');
-    const powerUpSfx = document.getElementById('powerUpSound');
-    const bystanderSfx = document.getElementById('bystanderSound');
-    const comboSfx = document.getElementById('comboSound');
-    const jailBarSfx = document.getElementById('jailBarSound');
-
-    const instructionModal = document.getElementById('instructionModal');
-    const closeInstructionsButton = document.getElementById('closeInstructionsButton');
-    const jailBarsOverlay = document.getElementById('jailBarsOverlay');
-
-    const staceyURL = 'https://i.imgur.com/qDTf6hn.jpeg';
-    const jakeURL = 'https://i.imgur.com/hDQyFFS.jpeg';
-    const bystanderURL = 'https://via.placeholder.com/60/808080/FFFFFF?text=Byst';
-    const timePowerUpURL = 'https://via.placeholder.com/60/0000FF/FFFFFF?text=Time';
-    const scorePowerUpURL = 'https://via.placeholder.com/60/FFD700/000000?text=Score';
-
-    const gameSettings = {
-        initialTime: 30,
-        baseSpawnInterval: 950,
-        minSpawnInterval: 400,
-        jakeBaseProb: 0.20,
-        jakeMaxProb: 0.40,
-        powerUpProb: 0.10,
-        bystanderProb: 0.15,
-        pointsPerStacey: 5,
-        comboBonusMultiplier: 2,
-        bystanderPenalty: 10,
-        timePowerUpValue: 5,
-        scorePowerUpDuration: 5000,
-        scorePowerUpMultiplier: 2,
-        difficultyScoreThreshold: 100,
-        itemBaseSpeed: 4.5,
-        itemSpeedVariance: 3.0
+    // Object to store loaded image assets
+    const assets = {};
+    // Paths to image sources - UPDATED TO RELATIVE "assets/images/"
+    const imageSources = {
+      bird: "assets/images/flappybirdgreen.png",
+      pipeTop: "assets/images/pipe-green-top.png",
+      pipeBottom: "assets/images/pipe-green-bottom.png",
+      coin: "assets/images/goldcoin.png",
+      background: "assets/images/cubes.png", // A pattern for scrolling background
     };
 
+    let assetsLoadedCount = 0;
+    const totalAssets = Object.keys(imageSources).length;
+
+    // Function to load all necessary game assets (images)
+    function loadAssets() {
+      for (const key in imageSources) {
+        const img = new Image();
+        img.src = imageSources[key];
+        img.onload = () => {
+          assetsLoadedCount++;
+          assets[key] = img; // Store loaded image in assets object
+          if (assetsLoadedCount === totalAssets) {
+            // All assets loaded, initialize and start the game
+            initGame();
+          }
+        };
+        img.onerror = () => {
+          console.error(`Failed to load image: ${imageSources[key]}. Please ensure it's in the correct 'assets/images/' folder.`);
+          assetsLoadedCount++; // Still increment to avoid endless waiting if an asset fails
+          if (assetsLoadedCount === totalAssets) {
+            initGame();
+          }
+        };
+      }
+    }
+
+    // References to audio elements
+    const flapSound = document.getElementById("flapSound");
+    const coinSound = document.getElementById("coinSound");
+    const hitSound = document.getElementById("hitSound");
+    const scoreSound = document.getElementById("scoreSound");
+    const bgMusic = document.getElementById("bgMusic");
+
+    // Game state variables
+    let bird;
+    let pipes = [];
+    let coins = [];
     let score = 0;
-    let highScore = 0;
-    let timeLeft = gameSettings.initialTime;
-    let gameInterval, spawnIntervalId, animationIntervalId;
-    let gameActive = false;
-    let hitJakeInGameOver = false;
-    let comboCount = 0;
-    let comboTimeout;
-    let flickerInterval = null;
-    let originalBodyBackground = getComputedStyle(document.body).getPropertyValue('--original-bg');
-    let isFlickerRed = false;
-    let gameOverFlickerTimeout = null; 
-    let currentSpawnInterval = gameSettings.baseSpawnInterval;
-    let currentJakeProb = gameSettings.jakeBaseProb;
-    let activeScoreMultiplier = 1;
-    let scoreMultiplierTimeout;
-    let currentUserId = null; // To store Firebase User ID
+    let highScore = localStorage.getItem("highScore") || 0;
+    let frame = 0;
+    let gameState = 'ready'; // 'ready', 'playing', 'gameOver'
+    let backgroundX = 0; // For background scrolling effect
 
-    // --- Firebase Auth & DB Interaction ---
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!window.fbAuth || !window.fbDb) {
-            console.error("Firebase services not available. Ensure Firebase module script runs first and exposes fbAuth/fbDb.");
-            // Fallback for user status display if Firebase isn't ready
-            const userAuthStatusEl = document.getElementById('userAuthStatus');
-            if (userAuthStatusEl) userAuthStatusEl.textContent = "Firebase not loaded. Please refresh.";
-            return;
-        }
+    // Game constants for easy tuning
+    const PIPE_WIDTH = 52;
+    const PIPE_GAP_HEIGHT = 180; // Gap size between top and bottom pipes
+    const PIPE_SPEED = 2; // Speed at which pipes move
+    const PIPE_SPAWN_INTERVAL = 90; // How many frames between new pipe spawns
 
-        const authInstance = window.fbAuth.auth;
-        const dbInstance = window.fbDb.db;
+    // --- Classes for better organization and object-oriented design ---
 
-        const userAuthStatus = document.getElementById('userAuthStatus');
-        const loginForm = document.getElementById('loginForm');
-        const signupForm = document.getElementById('signupForm');
-        const logoutButton = document.getElementById('logoutButton');
-        
-        const loginEmailInput = document.getElementById('loginEmail');
-        const loginPasswordInput = document.getElementById('loginPassword');
-        const loginButton = document.getElementById('loginButton');
-
-        const signupEmailInput = document.getElementById('signupEmail');
-        const signupPasswordInput = document.getElementById('signupPassword');
-        const signupButton = document.getElementById('signupButton');
-
-        window.fbAuth.onAuthStateChanged(authInstance, user => {
-            if (user) {
-                currentUserId = user.uid;
-                userAuthStatus.textContent = `Logged in as: ${user.email}`;
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'none';
-                logoutButton.style.display = 'inline-block';
-                console.log("User logged in:", user.email);
-                loadHighScore(); 
-            } else {
-                currentUserId = null;
-                userAuthStatus.textContent = 'Not logged in';
-                loginForm.style.display = 'block';
-                signupForm.style.display = 'block';
-                logoutButton.style.display = 'none';
-                console.log("User logged out");
-                highScore = 0; 
-                if(highScoreDisplay) highScoreDisplay.textContent = highScore; 
-                loadHighScore(); // Load local if preferred
-            }
-             // Enable start button regardless of login status for now
-             if(startButton) startButton.disabled = false;
-        });
-
-        signupButton.addEventListener('click', () => {
-            const email = signupEmailInput.value;
-            const password = signupPasswordInput.value;
-            if (!email || !password) { alert("Please enter email and password."); return; }
-            window.fbAuth.createUserWithEmailAndPassword(authInstance, email, password)
-                .then(userCredential => {
-                    console.log("Signed up:", userCredential.user.email);
-                    const userDocRef = window.fbDb.doc(dbInstance, "userScores", userCredential.user.uid);
-                    return window.fbDb.setDoc(userDocRef, { highScore: 0, email: userCredential.user.email }, { merge: true });
-                })
-                .then(() => {
-                     console.log("Initial user score document created/merged.");
-                     signupEmailInput.value = ''; // Clear fields
-                     signupPasswordInput.value = '';
-                })
-                .catch(error => {
-                    console.error("Signup error:", error.message);
-                    alert("Signup failed: " + error.message);
-                });
-        });
-
-        loginButton.addEventListener('click', () => {
-            const email = loginEmailInput.value;
-            const password = loginPasswordInput.value;
-            if (!email || !password) { alert("Please enter email and password."); return; }
-            window.fbAuth.signInWithEmailAndPassword(authInstance, email, password)
-                .then(userCredential => {
-                    console.log("Logged in:", userCredential.user.email);
-                    loginEmailInput.value = ''; // Clear fields
-                    loginPasswordInput.value = '';
-                })
-                .catch(error => {
-                    console.error("Login error:", error.message);
-                    alert("Login failed: " + error.message);
-                });
-        });
-
-        logoutButton.addEventListener('click', () => {
-            window.fbAuth.signOut(authInstance).catch(error => {
-                console.error("Logout error:", error.message);
-            });
-        });
-    }); // End of DOMContentLoaded for Firebase Auth UI
-
-    async function saveScoreToFirebase(userId, newScoreToSave) {
-        if (!userId || !window.fbDb || !window.fbDb.db) {
-            console.log("No user logged in or Firebase DB not ready. Score not saved to Firebase.");
-            return;
-        }
-        console.log(`Attempting to save score ${newScoreToSave} for user ${userId}`);
-        try {
-            const userDocRef = window.fbDb.doc(window.fbDb.db, "userScores", userId);
-            const docSnap = await window.fbDb.getDoc(userDocRef);
-            let currentFirebaseHighScore = 0;
-            if (docSnap.exists()) {
-                currentFirebaseHighScore = docSnap.data().highScore || 0;
-            }
-            
-            if (newScoreToSave > currentFirebaseHighScore) {
-                await window.fbDb.setDoc(userDocRef, { highScore: newScoreToSave }, { merge: true });
-                console.log("New high score saved to Firebase:", newScoreToSave);
-                highScore = newScoreToSave; 
-                if(highScoreDisplay) highScoreDisplay.textContent = highScore;
-            } else {
-                console.log(`Score ${newScoreToSave} not higher than Firebase high score ${currentFirebaseHighScore}. Not updated.`);
-            }
-        } catch (error) {
-            console.error("Error saving score to Firebase:", error);
-        }
-    }
-
-    async function loadHighScoreFromFirebase(userId) {
-        if (!userId || !window.fbDb || !window.fbDb.db) {
-            console.log("No user logged in or Firebase DB not ready. Cannot load score from Firebase.");
-            return 0;
-        }
-        try {
-            const userDocRef = window.fbDb.doc(window.fbDb.db, "userScores", userId);
-            const docSnap = await window.fbDb.getDoc(userDocRef);
-            if (docSnap.exists()) {
-                const firebaseHighScore = docSnap.data().highScore || 0;
-                console.log("Score loaded from Firebase:", firebaseHighScore);
-                return firebaseHighScore;
-            } else {
-                console.log("No score document found for user in Firebase. Creating one with highScore 0.");
-                await window.fbDb.setDoc(userDocRef, { highScore: 0 }); // Create doc if not exists
-                return 0;
-            }
-        } catch (error) {
-            console.error("Error loading score from Firebase:", error);
-            return 0; 
-        }
-    }
-    // --- End Firebase ---
-
-    function playSound(soundElement) {
-        if (soundElement && soundElement.src && soundElement.src !== window.location.href && !soundElement.src.endsWith('null') && !soundElement.src.endsWith('undefined') && !soundElement.src.includes('YOUR_')) {
-            soundElement.currentTime = 0;
-            soundElement.play().catch(error => console.warn("Audio play error:", error.message, "for", soundElement.src));
-        }
-    }
-
-    function createScorePopup(value, element) {
-        const popup = document.createElement('div');
-        popup.textContent = (value > 0 ? '+' : '') + value;
-        popup.className = 'score-popup';
-        popup.style.color = value > 0 ? 'gold' : 'red';
-        const itemRect = element.getBoundingClientRect();
-        const gameAreaRect = gameArea.getBoundingClientRect();
-        popup.style.left = (itemRect.left - gameAreaRect.left + element.offsetWidth / 2 - 15) + 'px';
-        popup.style.top = (itemRect.top - gameAreaRect.top - 10) + 'px';
-        gameArea.appendChild(popup);
-        setTimeout(() => { if (popup.parentNode) popup.remove(); }, 700);
-    }
-
-    function updateActivePowerUpsDisplay() {
-        let displayHTML = "";
-        if (activeScoreMultiplier > 1) { displayHTML += `Double Score Active! `; }
-        activePowerUpsDisplay.innerHTML = displayHTML;
-    }
-
-    function showInstructions() {
-      instructionModal.style.display = 'flex';
-      if(startButton) startButton.disabled = true;
-    }
-    function hideInstructions() {
-      instructionModal.style.display = 'none';
-      localStorage.setItem('instructionsShown', 'true');
-      if(startButton && !gameActive) startButton.disabled = false; // Only enable if game not active
-    }
-    
-    // Ensure loadHighScore is async to work with Firebase
-    async function loadHighScore() {
-        if (currentUserId) { // Check if a user is logged in (Firebase)
-            highScore = await loadHighScoreFromFirebase(currentUserId);
-        } else {
-            // Fallback to localStorage if no user logged in
-            highScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
-            console.log("Loaded high score from localStorage (no user logged in).");
-        }
-        if(highScoreDisplay) highScoreDisplay.textContent = highScore;
-    }
-
-    // Ensure saveHighScore uses the global score variable
-    function saveHighScore() { 
-        if (currentUserId) { // Check if a user is logged in (Firebase)
-            saveScoreToFirebase(currentUserId, score); 
-        } else {
-            // Fallback or if you want to always save locally too for non-logged-in users
-            const localHighScore = parseInt(localStorage.getItem('taylanGameHighScore') || '0');
-            if (score > localHighScore) {
-                localStorage.setItem('taylanGameHighScore', score.toString());
-                console.log("Saved high score to localStorage (no user logged in).");
-                if(!currentUserId) { // Update display only if Firebase didn't handle it
-                    highScore = score;
-                   if(highScoreDisplay) highScoreDisplay.textContent = highScore;
-                }
-            }
-        }
-    }
-
-
-    window.addEventListener('load', () => {
-      // loadHighScore(); // Moved to be called after auth state is known or DOMContentLoaded
-      if (localStorage.getItem('instructionsShown') !== 'true') {
-        showInstructions();
-      } else {
-        if(startButton) startButton.disabled = false;
-      }
-      if (music) music.volume = 0.3; 
-      if (staceyClickSfx) staceyClickSfx.volume = 1.0; 
-      if (gameOverSoundEffect) gameOverSoundEffect.volume = 0.6;
-      if (staceyClickSfx.src && staceyClickSfx.src !== window.location.href && !staceyClickSfx.src.includes("YOUR_")) {
-        staceyClickSfx.preload = 'auto';
-        staceyClickSfx.load();
-      }
-      // Initial call to loadHighScore is now better handled by onAuthStateChanged or DOMContentLoaded
-      // but for non-logged-in state, ensure it's loaded once.
-      if (!currentUserId) {
-          loadHighScore();
-      }
-    });
-
-    closeInstructionsButton.addEventListener('click', hideInstructions);
-    showInstructionsButton.addEventListener('click', showInstructions);
-
-    function updateDifficulty() {
-        const difficultyFactor = Math.floor(score / gameSettings.difficultyScoreThreshold);
-        currentSpawnInterval = Math.max(gameSettings.minSpawnInterval, gameSettings.baseSpawnInterval - difficultyFactor * 50);
-        currentJakeProb = Math.min(gameSettings.jakeMaxProb, gameSettings.jakeBaseProb + difficultyFactor * 0.02);
-        if (gameActive && spawnIntervalId) {
-            clearInterval(spawnIntervalId);
-            spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
-        }
-    }
-
-    function updateItemPositions() {
-        if (!gameActive) return;
-        const items = gameArea.querySelectorAll('.item-face');
-        const gameAreaWidth = gameArea.clientWidth;
-        const gameAreaHeight = gameArea.clientHeight;
-        items.forEach(item => {
-            if (item.dx === 0 && item.dy === 0) return; 
-            if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return;
-            let currentX = parseFloat(item.style.left);
-            let currentY = parseFloat(item.style.top);
-            const itemWidth = item.offsetWidth;
-            const itemHeight = item.offsetHeight;
-            currentX += item.dx;
-            currentY += item.dy;
-            if (currentX <= 0) { currentX = 0; item.dx *= -1; } 
-            else if (currentX + itemWidth >= gameAreaWidth) { currentX = gameAreaWidth - itemWidth; item.dx *= -1; }
-            if (currentY <= 0) { currentY = 0; item.dy *= -1; } 
-            else if (currentY + itemHeight >= gameAreaHeight) { currentY = gameAreaHeight - itemHeight; item.dy *= -1; }
-            item.style.left = currentX + 'px';
-            item.style.top = currentY + 'px';
-        });
-    }
-
-    function spawnItem() {
-      if (!gameActive) return;
-      let itemType = 'stacey';
-      let itemURL = staceyURL;
-      let isPowerUp = false;
-      const rand = Math.random();
-      if (rand < currentJakeProb) { itemType = 'jake'; itemURL = jakeURL; } 
-      else if (rand < currentJakeProb + gameSettings.powerUpProb) {
-        isPowerUp = true;
-        if (Math.random() < 0.5) { itemType = 'timePowerUp'; itemURL = timePowerUpURL; } 
-        else { itemType = 'scorePowerUp'; itemURL = scorePowerUpURL; }
-      } else if (rand < currentJakeProb + gameSettings.powerUpProb + gameSettings.bystanderProb) {
-        itemType = 'bystander'; itemURL = bystanderURL;
+    class Bird {
+      constructor() {
+        this.x = 80;
+        this.y = canvas.height / 2 - (assets.bird ? assets.bird.height / 2 : 12); // Default if image not loaded yet
+        this.width = 34; // Bird image width
+        this.height = 24; // Bird image height
+        this.velocity = 0;
+        this.gravity = 0.4; // How fast the bird falls
+        this.lift = -7; // How much the bird jumps up
       }
 
-      if (itemURL.includes('YOUR_') && itemURL.includes('_IMAGE.png')) {
-          console.warn(`Skipping spawn for ${itemType} due to placeholder image URL: ${itemURL}`); return;
-      }
-      if (itemURL.includes('via.placeholder.com') && (itemType === 'jake' || itemType === 'stacey')) {
-           console.warn(`Skipping critical item ${itemType} due to placeholder image URL from via.placeholder.com: ${itemURL}`); return;
-      }
-
-      const img = document.createElement('img');
-      img.src = itemURL; img.alt = itemType; img.classList.add('item-face');
-      if (isPowerUp) img.classList.add('powerup-icon');
-      img.setAttribute('draggable', 'false'); img.dataset.itemType = itemType;
-      img.onerror = function() {
-          console.error(`Error loading image: ${itemURL} for item type: ${itemType}. Removing element.`);
-          if(itemType === 'jake') console.error("CRITICAL: Jake image failed to load!");
-          if (img.parentNode) img.remove();
-      };
-      const itemSize = 60;
-      const x = Math.random() * (gameArea.clientWidth - itemSize);
-      const y = Math.random() * (gameArea.clientHeight - itemSize);
-      img.style.left = x + 'px'; img.style.top = y + 'px';
-      const speed = gameSettings.itemBaseSpeed + Math.random() * gameSettings.itemSpeedVariance;
-      const angle = Math.random() * 2 * Math.PI;
-      img.dx = Math.cos(angle) * speed; img.dy = Math.sin(angle) * speed;
-      if (itemType === 'jake') { 
-          img.dx = Math.cos(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
-          img.dy = Math.sin(angle) * (gameSettings.itemBaseSpeed + 0.5 + Math.random() * gameSettings.itemSpeedVariance);
+      draw() {
+        if (!assets.bird) return; // Don't draw if image not loaded
+        // Simple up-down animation for bird to make it feel alive
+        const animationOffset = Math.sin(frame * 0.1) * 2; // Subtle vertical bobbing
+        ctx.drawImage(assets.bird, this.x, this.y + animationOffset, this.width, this.height);
       }
 
-      img.addEventListener('click', (event) => {
-        if (!gameActive || (img.dx === 0 && img.dy === 0 && !img.classList.contains('stacey-clicked'))) return;
-        img.dx = 0; img.dy = 0;
-        const clickedItemType = img.dataset.itemType;
+      update() {
+        this.velocity += this.gravity;
+        this.y += this.velocity;
 
-        if (clickedItemType === 'jake') {
-          const noSymbol = document.createElement('div'); noSymbol.className = 'no-symbol-overlay';
-          const itemRect = img.getBoundingClientRect(); const gameAreaRect = gameArea.getBoundingClientRect();
-          noSymbol.style.left = (itemRect.left - gameAreaRect.left + (img.offsetWidth / 2) - 35) + 'px';
-          noSymbol.style.top = (itemRect.top - gameAreaRect.top + (img.offsetHeight / 2) - 35) + 'px';
-          gameArea.appendChild(noSymbol);
-          const flash = document.createElement('div'); flash.id = 'screenFlashOverlay';
-          if (document.getElementById('screenFlashOverlay')) { document.getElementById('screenFlashOverlay').remove(); }
-          gameArea.appendChild(flash);
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-          hitJakeInGameOver = true; endGame();
-        } else if (clickedItemType === 'stacey') {
-          playSound(staceyClickSfx); img.classList.add('stacey-clicked');
-          comboCount++;
-          const pointsEarned = gameSettings.pointsPerStacey * (comboCount > 1 ? gameSettings.comboBonusMultiplier : 1) * activeScoreMultiplier;
-          score += pointsEarned; scoreDisplay.textContent = score;
-          createScorePopup(pointsEarned, img);
-          comboDisplay.textContent = comboCount > 1 ? `Combo: ${comboCount}x!` : '';
-          if (comboCount > 1) {
-            playSound(comboSfx); comboDisplay.classList.add('active');
-            setTimeout(() => comboDisplay.classList.remove('active'), 300);
-          }
-          clearTimeout(comboTimeout);
-          comboTimeout = setTimeout(() => { comboCount = 0; comboDisplay.textContent = ''; }, 2000);
-          if (navigator.vibrate) navigator.vibrate(30); updateDifficulty();
-        } else if (clickedItemType === 'bystander') {
-            playSound(bystanderSfx); score = Math.max(0, score - gameSettings.bystanderPenalty);
-            scoreDisplay.textContent = score; createScorePopup(-gameSettings.bystanderPenalty, img);
-            comboCount = 0; comboDisplay.textContent = '';
-            if (navigator.vibrate) navigator.vibrate(50);
-        } else if (clickedItemType === 'timePowerUp') {
-            playSound(powerUpSfx); timeLeft += gameSettings.timePowerUpValue; timeDisplay.textContent = timeLeft;
-            const currentMaxTime = Math.max(gameSettings.initialTime, timeLeft);
-            visualTimerBar.style.width = Math.min(100, (timeLeft / currentMaxTime) * 100) + '%';
-            createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
-        } else if (clickedItemType === 'scorePowerUp') {
-            playSound(powerUpSfx); activeScoreMultiplier = gameSettings.scorePowerUpMultiplier;
-            updateActivePowerUpsDisplay(); createScorePopup(`x${gameSettings.scorePowerUpMultiplier} Score!`, img);
-            clearTimeout(scoreMultiplierTimeout);
-            scoreMultiplierTimeout = setTimeout(() => { activeScoreMultiplier = 1; updateActivePowerUpsDisplay(); }, gameSettings.scorePowerUpDuration);
+        // Prevent bird from going off top of screen
+        if (this.y < 0) {
+          this.y = 0;
+          this.velocity = 0;
         }
-        img.style.pointerEvents = 'none'; 
-        if (clickedItemType !== 'stacey') { 
-            setTimeout(() => { if (img.parentNode) img.remove(); }, isPowerUp ? 100 : 300); 
-        } else {
-             setTimeout(() => { if (img.parentNode) img.remove(); }, 300); 
+      }
+
+      flap() {
+        this.velocity = this.lift;
+        flapSound.currentTime = 0; // Reset sound to play from start even if rapidly clicked
+        flapSound.play().catch(e => console.log("Flap sound failed to play:", e)); // Catch potential browser errors
+      }
+    }
+
+    class Pipe {
+      constructor(x) {
+        this.x = x;
+        this.width = PIPE_WIDTH;
+        // Randomize the top pipe height, ensuring enough space for the gap and margins
+        this.top = Math.random() * (canvas.height - PIPE_GAP_HEIGHT - 150) + 50; // Min 50px from top, max ensures bottom pipe fits
+        this.bottom = this.top + PIPE_GAP_HEIGHT;
+        this.passed = false; // To track if bird has passed it for scoring
+      }
+
+      draw() {
+        if (!assets.pipeTop || !assets.pipeBottom) return; // Don't draw if images not loaded
+        ctx.drawImage(assets.pipeTop, this.x, this.top - 320, this.width, 320); // Pipe images are typically tall
+        ctx.drawImage(assets.pipeBottom, this.x, this.bottom, this.width, 320);
+      }
+
+      update() {
+        this.x -= PIPE_SPEED;
+      }
+    }
+
+    class Coin {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 25; // Coin image dimensions
+        this.height = 25;
+        this.collected = false;
+        this.animationScale = 1; // For a simple pulse animation
+      }
+
+      draw() {
+        if (!this.collected && assets.coin) {
+          // Simple pulse animation for coin
+          this.animationScale = 1 + Math.sin(frame * 0.1) * 0.05; // Scales from 0.95 to 1.05
+          ctx.drawImage(assets.coin,
+            this.x - (this.width * (this.animationScale - 1) / 2), // Adjust X to keep centered during scale
+            this.y - (this.height * (this.animationScale - 1) / 2), // Adjust Y to keep centered during scale
+            this.width * this.animationScale,
+            this.height * this.animationScale
+          );
+        }
+      }
+
+      update() {
+        this.x -= PIPE_SPEED;
+      }
+    }
+
+    // --- Game Functions ---
+
+    // Initializes game settings and sets up initial event listeners
+    function initGame() {
+      bird = new Bird(); // Create the bird instance
+      resetGame(); // Set initial game state to 'ready'
+      
+      // Set audio volumes
+      bgMusic.volume = 0.3;
+      flapSound.volume = 0.5;
+      coinSound.volume = 0.6;
+      hitSound.volume = 0.7;
+      scoreSound.volume = 0.5;
+
+      // Event listeners for game actions
+      document.addEventListener("keydown", handleInput);
+      canvas.addEventListener("click", handleInput);
+
+      gameLoop(); // Start the main game loop
+    }
+
+    // Handles all user input (keyboard and click)
+    function handleInput(e) {
+      if (e.type === 'keydown' && !(e.code === "Space" || e.code === "ArrowUp")) {
+        return; // Only respond to Space or ArrowUp keys
+      }
+
+      if (gameState === 'ready') {
+        gameState = 'playing';
+        bird.flap(); // Initial flap to start the game
+        bgMusic.play().catch(err => console.log("Background music failed to play:", err)); // Play music on first interaction
+      } else if (gameState === 'playing') {
+        bird.flap();
+      } else if (gameState === 'gameOver') {
+        resetGame(); // Restart game on interaction
+      }
+    }
+
+    // Resets all game variables to their initial state
+    function resetGame() {
+      bird = new Bird(); // Re-initialize bird to its starting position
+      pipes = [];
+      coins = [];
+      score = 0;
+      frame = 0; // Reset frame count for consistent pipe spawning
+      highScore = localStorage.getItem("highScore") || 0; // Refresh high score from local storage
+      gameState = 'ready'; // Set game state to 'ready' for the start screen
+      bgMusic.pause(); // Pause music when resetting
+      bgMusic.currentTime = 0; // Rewind music
+    }
+
+    // Spawns a new pipe and a coin associated with it
+    function spawnPipeAndCoin() {
+      const newPipe = new Pipe(canvas.width);
+      pipes.push(newPipe);
+
+      // Spawn coin centered horizontally in the pipe gap
+      const coinY = newPipe.top + PIPE_GAP_HEIGHT / 2 - (new Coin(0,0).height / 2); // Center coin vertically
+      coins.push(new Coin(canvas.width + PIPE_WIDTH / 2 - (new Coin(0,0).width / 2), coinY));
+    }
+
+    // Detects collisions between bird and pipes/ground/ceiling, and bird and coins
+    function detectCollisions() {
+      let gameOver = false;
+
+      // Bird with ground/ceiling
+      if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        gameOver = true;
+      }
+
+      // Bird with pipes (AABB collision detection)
+      pipes.forEach(pipe => {
+        // Collision with top pipe
+        if (
+          bird.x < pipe.x + pipe.width &&
+          bird.x + bird.width > pipe.x &&
+          bird.y < pipe.top
+        ) {
+          gameOver = true;
+        }
+        // Collision with bottom pipe
+        if (
+          bird.x < pipe.x + pipe.width &&
+          bird.x + bird.width > pipe.x &&
+          bird.y + bird.height > pipe.bottom
+        ) {
+          gameOver = true;
+        }
+
+        // Score for passing a pipe (only once per pipe)
+        if (pipe.x + pipe.width < bird.x && !pipe.passed) {
+          score += 1; // 1 point for passing a pipe
+          pipe.passed = true;
+          scoreSound.currentTime = 0;
+          scoreSound.play().catch(e => console.log("Score sound failed to play:", e));
         }
       });
-      gameArea.appendChild(img);
-      if (itemType !== 'jake') {
-        setTimeout(() => {
-          if (gameArea.contains(img) && (img.dx !== 0 || img.dy !== 0) && img.style.pointerEvents !== 'none') {
-              if (itemType === 'stacey') { 
-                  comboCount = 0; comboDisplay.textContent = ''; clearTimeout(comboTimeout);
-              }
-              if (img.parentNode === gameArea) { gameArea.removeChild(img); }
-          }
-        }, itemType === 'bystander' || isPowerUp ? 3000 : 2500); 
-      }
-    }
 
-    function updateTimer() {
-      timeLeft--; timeDisplay.textContent = timeLeft;
-      const percentageLeft = Math.max(0,(timeLeft / gameSettings.initialTime) * 100); 
-      visualTimerBar.style.width = percentageLeft + '%';
-      if (percentageLeft < 25) visualTimerBar.style.backgroundColor = '#f44336';
-      else if (percentageLeft < 50) visualTimerBar.style.backgroundColor = '#ffeb3b'; 
-      else visualTimerBar.style.backgroundColor = '#4CAF50';
-      if (timeLeft <= 0) { timeLeft = 0; timeDisplay.textContent = timeLeft; endGame(); }
-    }
-
-    function toggleBackgroundColorFlicker() {
-        if (isFlickerRed) { document.body.style.background = 'rgba(0,0,255,0.3)'; } 
-        else { document.body.style.background = 'rgba(255,0,0,0.3)'; }
-        isFlickerRed = !isFlickerRed;
-    }
-
-    function startGame() {
-      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
-      if (flickerInterval) clearInterval(flickerInterval); 
-      document.body.style.background = originalBodyBackground; 
-      gameOverSoundEffect.pause(); gameOverSoundEffect.currentTime = 0;
-      if (jailBarSfx.src && jailBarSfx.src !== window.location.href && !jailBarSfx.src.includes('YOUR_')) {
-        jailBarSfx.pause(); jailBarSfx.currentTime = 0;
-      }
-      if (jakePenaltySfx.src && jakePenaltySfx.src !== window.location.href && !jakePenaltySfx.src.includes('YOUR_')) {
-        jakePenaltySfx.pause(); jakePenaltySfx.currentTime = 0;
-      }
-      gameActive = true; hitJakeInGameOver = false; score = 0;
-      timeLeft = gameSettings.initialTime; comboCount = 0; activeScoreMultiplier = 1;
-      currentSpawnInterval = gameSettings.baseSpawnInterval; currentJakeProb = gameSettings.jakeBaseProb;
-      scoreDisplay.textContent = score; timeDisplay.textContent = timeLeft;
-      visualTimerBar.style.width = '100%'; visualTimerBar.style.backgroundColor = '#4CAF50';
-      comboDisplay.textContent = ''; gameOverMessage.style.display = 'none';
-      jailBarsOverlay.classList.remove('active');
-      document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
-          b.style.animation = 'none'; b.offsetHeight; b.style.animation = ''; b.style.height = '0%'; 
+      // Bird with coins
+      coins.forEach(coin => {
+        if (!coin.collected &&
+          bird.x < coin.x + coin.width &&
+          bird.x + bird.width > coin.x &&
+          bird.y < coin.y + coin.height &&
+          bird.y + bird.height > coin.y
+        ) {
+          coin.collected = true;
+          coinSound.currentTime = 0;
+          coinSound.play();
+          score += 5; // 5 points for collecting a coin
+        }
       });
-      updateActivePowerUpsDisplay(); clearTimeout(scoreMultiplierTimeout);
-      startButton.textContent = 'Game in Progress...'; startButton.disabled = true;
-      showInstructionsButton.disabled = true; clearGameElements();
-      if (music.src && music.src !== window.location.href && !music.src.includes('YOUR_')) {
-        music.play().catch(error => console.warn("Music play error:", error.message));
+
+      if (gameOver) {
+        gameState = 'gameOver';
+        hitSound.play(); // Play hit sound only once when game is over
       }
-      isFlickerRed = false; flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
-      if(spawnIntervalId) clearInterval(spawnIntervalId);
-      spawnIntervalId = setInterval(spawnItem, currentSpawnInterval);
-      if(gameInterval) clearInterval(gameInterval);
-      gameInterval = setInterval(updateTimer, 1000);
-      if(animationIntervalId) clearInterval(animationIntervalId);
-      animationIntervalId = setInterval(updateItemPositions, 50); 
     }
 
-    function endGame() {
-      const wasAlreadyOver = !gameActive; gameActive = false; 
-      clearInterval(spawnIntervalId); clearInterval(gameInterval);
-      if (animationIntervalId) clearInterval(animationIntervalId); 
-      clearTimeout(comboTimeout); clearTimeout(scoreMultiplierTimeout);
-      if (flickerInterval) clearInterval(flickerInterval);
-      if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
-      saveHighScore(); // This will now try to save to Firebase if user is logged in
+    // Draws the scrolling background
+    function drawBackground() {
+      // Draw a base sky color first
+      ctx.fillStyle = '#70c5ce';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      if (hitJakeInGameOver) {
-          gameOverMessage.innerHTML = `YOU KILLED JAKE!<br>YOUR UNDER ARREST FOR KILLING A COP!<br>Final Score: ${score}`;
-          playSound(jailBarSfx); 
-          jailBarsOverlay.classList.add('active');
-          document.querySelectorAll('#jailBarsOverlay .jail-bar').forEach(b => {
-            b.style.animation = 'none'; b.offsetHeight; 
-            b.style.animationName = 'dropJailBar'; b.style.animationDuration = '0.6s';
-            b.style.animationTimingFunction = 'ease-in-out'; b.style.animationFillMode = 'forwards';
-            const index = Array.from(b.parentNode.children).indexOf(b);
-            b.style.animationDelay = `${index * 0.05}s`;
-          });
-      } else {
-          gameOverMessage.innerHTML = `Time's Up!<br>You caught her, Stacey's under arrest!!<br>Final Score: ${score}`;
+      if (assets.background) {
+        // Draw the background pattern, scrolling it
+        ctx.drawImage(assets.background, backgroundX, 0, canvas.width, canvas.height);
+        ctx.drawImage(assets.background, backgroundX + canvas.width, 0, canvas.width, canvas.height);
+        backgroundX -= PIPE_SPEED * 0.2; // Slower than pipes for parallax effect
+        // Reset background position when it scrolls off screen
+        if (backgroundX <= -canvas.width) {
+          backgroundX = 0;
+        }
       }
-      gameOverMessage.style.display = 'block';
-      startButton.textContent = 'Restart Game'; startButton.disabled = false;
-      showInstructionsButton.disabled = false; 
-      if (music.src && music.src !== window.location.href && !music.src.includes('YOUR_')) {
-        music.pause(); music.currentTime = 0;
-      }
-      if (!wasAlreadyOver && hitJakeInGameOver) { playSound(gameOverSoundEffect); }
-      flickerInterval = setInterval(toggleBackgroundColorFlicker, 300); 
-      gameOverFlickerTimeout = setTimeout(() => {
-          clearInterval(flickerInterval); 
-          if (!gameActive) { document.body.style.background = originalBodyBackground; }
-      }, 10000); 
     }
 
-    function clearGameElements() {
-        gameArea.querySelectorAll('.item-face, .no-symbol-overlay, .score-popup, #screenFlashOverlay').forEach(el => el.remove());
+    // Draws the score and high score display
+    function drawHUD() {
+      ctx.fillStyle = "white";
+      ctx.strokeStyle = "black"; // Outline for text
+      ctx.lineWidth = 3; // Thickness of the outline
+      ctx.font = "24px 'Press Start 2P'"; // Use the pixel font
+      ctx.textAlign = "left";
+
+      // Draw score with outline
+      ctx.strokeText("Score: " + score, 10, 40);
+      ctx.fillText("Score: " + score, 10, 40);
+
+      // Draw high score with outline
+      ctx.strokeText("High: " + highScore, 10, 80);
+      ctx.fillText("High: " + highScore, 10, 80);
     }
 
-    if(startButton) startButton.addEventListener('click', startGame);
+    // Draws the "Ready" screen before the game starts
+    function drawReadyScreen() {
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; // Semi-transparent overlay
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.font = "30px 'Press Start 2P'";
+      ctx.strokeText("TAY'S FLAPPY", canvas.width / 2, canvas.height / 2 - 50);
+      ctx.fillText("TAY'S FLAPPY", canvas.width / 2, canvas.height / 2 - 50);
+
+      ctx.font = "20px 'Press Start 2P'";
+      ctx.strokeText("Click or Space to Start", canvas.width / 2, canvas.height / 2 + 20);
+      ctx.fillText("Click or Space to Start", canvas.width / 2, canvas.height / 2 + 20);
+
+      ctx.font = "16px 'Press Start 2P'";
+      ctx.strokeText("High Score: " + highScore, canvas.width / 2, canvas.height / 2 + 80);
+      ctx.fillText("High Score: " + highScore, canvas.width / 2, canvas.height / 2 + 80);
+    }
+
+    // Draws the "Game Over" screen
+    function drawGameOverScreen() {
+      bgMusic.pause(); // Pause background music on game over
+      highScore = Math.max(score, highScore); // Update high score
+      localStorage.setItem("highScore", highScore); // Save high score to local storage
+
+      ctx.fillStyle = "rgba(0,0,0,0.7)"; // Darker overlay for game over
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.font = "40px 'Press Start 2P'";
+      ctx.strokeText("GAME OVER!", canvas.width / 2, canvas.height / 2 - 60);
+      ctx.fillText("GAME OVER!", canvas.width / 2, canvas.height / 2 - 60);
+
+      ctx.font = "24px 'Press Start 2P'";
+      ctx.strokeText("Score: " + score, canvas.width / 2, canvas.height / 2);
+      ctx.fillText("Score: " + score, canvas.width / 2, canvas.height / 2);
+
+      ctx.strokeText("High Score: " + highScore, canvas.width / 2, canvas.height / 2 + 40);
+      ctx.fillText("High Score: " + highScore, canvas.width / 2, canvas.height / 2 + 40);
+
+      ctx.font = "18px 'Press Start 2P'";
+      ctx.strokeText("Click or Space to Restart", canvas.width / 2, canvas.height / 2 + 100);
+      ctx.fillText("Click or Space to Restart", canvas.width / 2, canvas.height / 2 + 100);
+    }
+
+    // --- Main Game Loop ---
+    function gameLoop() {
+      // Always draw background first, regardless of game state
+      drawBackground();
+
+      if (gameState === 'ready') {
+        drawReadyScreen();
+      } else if (gameState === 'playing') {
+        frame++; // Increment frame count
+
+        // Spawn new pipes and coins at a regular interval
+        if (frame % PIPE_SPAWN_INTERVAL === 0) {
+          spawnPipeAndCoin();
+        }
+
+        // Update positions of all game elements
+        bird.update();
+        pipes.forEach(pipe => pipe.update());
+        coins.forEach(coin => coin.update());
+
+        // Filter out elements that have moved off-screen to keep arrays clean
+        pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+        coins = coins.filter(coin => !coin.collected || coin.x + coin.width > 0); // Keep uncollected coins until off-screen
+
+        // Draw elements in proper order (background -> pipes -> coins -> bird)
+        pipes.forEach(pipe => pipe.draw());
+        coins.forEach(coin => coin.draw());
+        bird.draw();
+
+        // Check for any collisions
+        detectCollisions();
+
+        // Draw the Heads-Up Display (score, high score) last
+        drawHUD();
+
+      } else if (gameState === 'gameOver') {
+        drawGameOverScreen(); // Display game over screen
+      }
+
+      // Request next animation frame to continue the loop
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start loading assets when the script begins execution
+    loadAssets();
   </script>
 </body>
 </html>
