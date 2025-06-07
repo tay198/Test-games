@@ -18,7 +18,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding-top: 10px;
-      color: #1a1a1a; /* High contrast */
+      color: #1a1a1a;
     }
     h1 {
       font-size: 1.8em;
@@ -77,7 +77,7 @@
       border-radius: 50%;
       cursor: pointer;
       user-select: none;
-      transition: transform 0.1s ease-out, left 0.016s linear, top 0.016s linear; /* Smoother movement */
+      transition: transform 0.1s ease-out, left 0.016s linear, top 0.016s linear;
     }
     .item-face:active {
         transform: scale(0.9);
@@ -95,14 +95,14 @@
         100% { transform: scale(1); }
     }
     .stacey-clicked {
-        animation: staceyGotClicked 0.25s ease-out forwards; /* Faster */
+        animation: staceyGotClicked 0.25s ease-out forwards;
     }
     @keyframes staceyGotClicked {
         0% { transform: scale(1.1); opacity: 1; }
         100% { transform: scale(0.5); opacity: 0; }
     }
     .sparkle {
-      animation: sparkle 0.5s ease-out forwards; /* Faster */
+      animation: sparkle 0.5s ease-out forwards;
     }
     @keyframes sparkle {
       0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1.2); }
@@ -171,7 +171,7 @@
         opacity: 0;
         z-index: 499;
         pointer-events: none;
-        animation: screenFlashAnim 0.6s ease-out; /* Longer flash */
+        animation: screenFlashAnim 0.6s ease-out;
     }
     @keyframes screenFlashAnim {
         0% { opacity: 0.7; }
@@ -184,7 +184,7 @@
       color: gold;
       text-shadow: 1px 1px 2px black;
       pointer-events: none;
-      animation: scorePopupAnim 0.5s ease-out forwards; /* Faster */
+      animation: scorePopupAnim 0.5s ease-out forwards;
       z-index: 100;
       transform-origin: center;
     }
@@ -248,7 +248,6 @@
       to   { height: 100%; transform: translateY(0); }
     }
     .powerup-icon {
-      border: 50%;
       border: 3px solid gold !important;
       box-shadow: 0 0 10px gold;
     }
@@ -271,7 +270,7 @@
   <div id="activePowerUpsDisplay" aria-live="polite"></div>
 
   <div id="gameArea" role="region" aria-label="Game play area">
-    <div id="gameOverMessage" aria-live="alert"></div>
+    <div id="gameOverMessage" aria-live="assertive"></div>
     <div id="jailBarsOverlay">
       <div class="jail-bar"></div><div class="jail-bar"></div><div class="jail-bar"></div>
       <div class="jail-bar"></div><div class="jail-bar"></div><div class="jail-bar"></div>
@@ -304,7 +303,7 @@
     // Cached DOM elements
     const gameArea = document.getElementById('gameArea');
     const scoreDisplay = document.getElementById('score');
-    const highScoreDisplay = document.getElement innumerablehighScore');
+    const highScoreDisplay = document.getElementById('highScore');
     const timeDisplay = document.getElementById('timeLeft');
     const visualTimerBar = document.getElementById('visualTimerBar');
     const comboDisplay = document.getElementById('combo');
@@ -312,7 +311,7 @@
     const startButton = document.getElementById('startButton');
     const showInstructionsButton = document.getElementById('showInstructionsButton');
     const activePowerUpsDisplay = document.getElementById('activePowerUpsDisplay');
-    const gameStartFlash = null; // Will be created dynamically
+
     const music = document.getElementById('gameMusic');
     const gameOverSoundEffect = document.getElementById('gameOverSound');
     const staceyClickSound = document.getElementById('staceyClickSound');
@@ -321,6 +320,7 @@
     const bystanderSfx = document.getElementById('bystanderSound');
     const comboSfx = document.getElementById('comboSound');
     const jailBarSfx = document.getElementById('jailBarSound');
+
     const instructionModal = document.getElementById('instructionModal');
     const closeInstructionsButton = document.getElementById('closeInstructionsButton');
     const jailBarsOverlay = document.getElementById('jailBarsOverlay');
@@ -335,8 +335,8 @@
     // Game settings
     const gameSettings = {
       initialTime: 35,
-      baseSpawnInterval: 900, // Faster spawn for smoother pacing
-      minSpawnInterval: 300, // Slightly more aggressive
+      baseSpawnInterval: 900,
+      minSpawnInterval: 300,
       jakeBaseProb: 0.15,
       jakeMaxProb: 0.35,
       powerUpProb: 0.12,
@@ -349,8 +349,8 @@
       scorePowerUpMultiplier: 2,
       difficultyScoreThreshold: 150,
       itemBaseSpeed: 4.5,
-      itemSpeedVariance: 3.5, // More dynamic movement
-      maxItems: 10 // Cap for performance
+      itemSpeedVariance: 3.5,
+      maxItems: 10
     };
 
     // Game state
@@ -390,7 +390,10 @@
     function playSound(soundElement) {
       if (soundElement && soundElement.src && soundElement.src !== window.location.href) {
         soundElement.currentTime = 0;
-        soundElement.play().catch(error => console.warn(`Audio play error: ${error.message} for ${soundElement.src}`));
+        soundElement.play().catch(error => {
+          console.warn(`Audio play error: ${error.message} for ${soundElement.id}`);
+          if (error.name === 'NotAllowedError') console.log('Audio autoplay blocked. Ensure user interaction.');
+        });
       }
     }
 
@@ -425,7 +428,7 @@
     // --- Game Logic ---
     function updateDifficulty() {
       const difficultyFactor = Math.floor(score / gameSettings.difficultyScoreThreshold);
-      currentSpawnInterval = Math.max(gameSettings.minSpawnInterval, gameSettings.baseSpawnInterval - difficultyFactor * 40); // Smoother scaling
+      currentSpawnInterval = Math.max(gameSettings.minSpawnInterval, gameSettings.baseSpawnInterval - difficultyFactor * 40);
       currentJakeProb = Math.min(gameSettings.jakeMaxProb, gameSettings.jakeBaseProb + difficultyFactor * 0.02);
       if (gameActive && spawnIntervalId) {
         clearInterval(spawnIntervalId);
@@ -434,7 +437,10 @@
     }
 
     function updateItemPositions(timestamp) {
-      if (!gameActive) return;
+      if (!gameActive) {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        return;
+      }
       
       const items = gameArea.querySelectorAll('.item-face');
       const gameAreaWidth = gameArea.clientWidth;
@@ -443,37 +449,27 @@
       items.forEach(item => {
         if (item.dx === 0 && item.dy === 0) return;
         if (!item.hasOwnProperty('dx') || !item.hasOwnProperty('dy')) return;
-          return;
-          
-        let currentTime = parseFloat(item.style.left) || 0;
-        let currentTime = parseFloat(item.style.top) || 0;
+        
+        let currentX = parseFloat(item.style.left) || 0;
+        let currentY = parseFloat(item.style.top) || 0;
         const itemWidth = item.offsetWidth;
         const itemHeight = item.offsetHeight;
         
         currentX += item.dx;
         currentY += item.dy;
         
-        // Boundary checks with bounce effect
         let bounced = false;
-        if (currentX <= 0) {
-          currentX = 0; item.dx *= -1; bounced = true;
-        } else if (currentX + itemWidth >= gameAreaWidth) {
-          currentX = gameAreaWidth - itemWidth; item.dx *= -1; bounced = true;
-        }
-        if (currentY <= 0) {
-          currentY = 0; item.dy *= -1; bounced = true;
-        } else if (currentY + itemHeight >= gameAreaHeight) {
-          currentY = gameAreaHeight - itemHeight; item.dy *= -1; bounced = true;
-        }
+        if (currentX <= 0) { currentX = 0; item.dx *= -1; bounced = true; }
+        else if (currentX + itemWidth >= gameAreaWidth) { currentX = gameAreaWidth - itemWidth; item.dx *= -1; bounced = true; }
+        if (currentY <= 0) { currentY = 0; item.dy *= -1; bounced = true; }
+        else if (currentY + itemHeight >= gameAreaHeight) { currentY = gameAreaHeight - itemHeight; item.dy *= -1; bounced = true; }
         
-        if (bounced) item.classList.add('bounce'); setTimeout(() => item.classList.remove('bounce'), 200);
+        if (bounced) { item.classList.add('bounce'); setTimeout(() => item.classList.remove('bounce'), 200); }
         
         item.style.left = `${currentX}px`;
         item.style.top = `${currentY}px`;
         
-        if (item === focusedItem) {
-          item.focus();
-        }
+        if (item === focusedItem) item.focus();
       });
       
       animationFrameId = requestAnimationFrame(updateItemPositions);
@@ -493,7 +489,8 @@
         if (Math.random() < 0.5) { itemType = 'timePowerUp'; itemURL = timePowerUpURL; }
         else { itemType = 'scorePowerUp'; itemURL = scorePowerUpURL; }
       } else if (rand < currentJakeProb + gameSettings.powerUpProb + gameSettings.bystanderProb) {
-        itemType = 'bystander'; itemLabel = bystanderURL; }
+        itemType = 'bystander'; itemURL = bystanderURL;
+      }
 
       const img = document.createElement('img');
       img.src = itemURL; img.alt = `Game item: ${itemType}`; img.classList.add('item-face');
@@ -501,24 +498,18 @@
       img.setAttribute('draggable', 'false'); img.dataset.itemType = itemType;
       img.setAttribute('tabindex', '0');
       img.onerror = () => {
-        console.error(`Error loading image: ${itemURL} for ${itemType}: ${itemType}`);
-        if (itemType === 'jake' || itemType === 'stacey') console.error('Critical item failed!');
+        console.error(`Error loading image: ${itemURL} for ${itemType}`);
         if (img.parentNode) img.remove();
       };
       const itemSize = 60;
       const x = Math.random() * (gameArea.clientWidth - itemSize);
       const y = Math.random() * (gameArea.clientHeight - itemSize);
-      img.style.left = `${x}px`; img;
-      img.style.top = `${y}px`; 
-      const speed = Math.min(gameSettings.itemBaseSpeed + Math.random() * gameSettings.itemSpeedVariance, 7.5); // Cap speed
+      img.style.left = `${x}px`; img.style.top = `${y}px`;
+      const speed = Math.min(gameSettings.itemBaseSpeed + Math.random() * gameSettings.itemSpeedVariance, 7.5);
       const angle = Math.random() * 2 * Math.PI;
       img.dx = Math.cos(angle) * speed;
       img.dy = Math.sin(angle) * speed;
-      
-      if (itemType === 'jake') {
-        img.dx *= 1.2; // Faster Jake
-        img.dy *= 1.2;
-      }
+      if (itemType === 'jake') { img.dx *= 1.2; img.dy *= 1.2; }
 
       img.addEventListener('click', handleItemInteraction);
       img.addEventListener('keydown', (event) => {
@@ -528,21 +519,16 @@
         }
       });
       gameArea.appendChild(img);
-      if (!focusedItem) {
-        focusedItem = img;
-        img.focus();
-      }
+      if (!focusedItem) { focusedItem = img; img.focus(); }
 
       if (itemType !== 'jake') {
         setTimeout(() => {
           if (gameArea.contains(img) && (img.dx !== 0 || img.dy !== 0) && img.style.pointerEvents !== 'none') {
-            if (itemType === 'stacey') {
-              comboCount = 0; comboDisplay.textContent = ''; clearTimeout(comboTimeout);
-            }
-            if (img.parentNode === gameArea) gameArea.removeChild(img);
+            if (itemType === 'stacey') { comboCount = 0; comboDisplay.textContent = ''; clearTimeout(comboTimeout); }
+            if (img.parentNode) gameArea.removeChild(img);
             if (img === focusedItem) focusedItem = null;
           }
-        }, itemType === 'bystander' || isPowerUp ? 2000 : 2000); // Faster despawn
+        }, itemType === 'bystander' || isPowerUp ? 2000 : 2000);
       }
     }
 
@@ -553,11 +539,10 @@
       const clickedItemType = img.dataset.itemType;
 
       if (clickedItemType === 'jake') {
-        const noSymbol = document.createElement('div'); noSymbol.classList.add('no-symbol-overlay');
-        const itemRect = img.getBoundingClientRect();
-        const gameAreaRect = gameArea.getBoundingClientRect();
-        noSymbol.style.left = `${itemRect.left - gameAreaRect.left + (img.offsetWidth / 2) - 35}px`;
-        noSymbol.style.top = `${itemRect.top - gameAreaRect.top + (img.offsetHeight / 2) - 35}px`;
+        const noSymbol = document.createElement('div'); noSymbol.className = 'no-symbol-overlay';
+        const itemRect = img.getBoundingClientRect(); const gameAreaRect = gameArea.getBoundingClientRect();
+        noSymbol.style.left = (itemRect.left - gameAreaRect.left + (img.offsetWidth / 2) - 35) + 'px';
+        noSymbol.style.top = (itemRect.top - gameAreaRect.top + (img.offsetHeight / 2) - 35) + 'px';
         gameArea.appendChild(noSymbol);
         const flash = document.createElement('div'); flash.id = 'screenFlashOverlay';
         if (document.getElementById('screenFlashOverlay')) document.getElementById('screenFlashOverlay').remove();
@@ -575,7 +560,7 @@
         createScorePopup(pointsEarned, img);
         comboDisplay.textContent = comboCount > 1 ? `Combo: ${comboCount}x!` : '';
         if (comboCount > 1) {
-          playSound(comboSfx');
+          playSound(comboSfx);
           comboDisplay.classList.add('active');
           setTimeout(() => comboDisplay.classList.remove('active'), 300);
         }
@@ -600,23 +585,17 @@
         createScorePopup(`+${gameSettings.timePowerUpValue}s`, img);
         img.classList.add('sparkle');
       } else if (clickedItemType === 'scorePowerUp') {
-        playSound(powerUpSfx');
+        playSound(powerUpSfx);
         activeScoreMultiplier = gameSettings.scorePowerUpMultiplier;
         updateActivePowerUpsDisplay();
-        createScorePopup(`x${gameSettings.scorePowerUpMultiplier}x Score`, img);
+        createScorePopup(`x${gameSettings.scorePowerUpMultiplier} Score!`, img);
         clearTimeout(scoreMultiplierTimeout);
-        scoreMultiplierTimeout = setTimeout(() => { 
-          activeScoreMultiplier = 1; 
-            updateActivePowerUpsDisplay(); 
-        }, gameSettings.scorePowerUpDuration);
+        scoreMultiplierTimeout = setTimeout(() => { activeScoreMultiplier = 1; updateActivePowerUpsDisplay(); }, gameSettings.scorePowerUpDuration);
         img.classList.add('sparkle');
       }
 
       img.style.pointerEvents = 'none';
-      setTimeout(() => { 
-        if (img.parentNode) img.remove(); 
-        if (img === focusedItem) focusedItem = null; 
-      }, clickedItemType === 'stacey' ? 250 : 100);
+      setTimeout(() => { if (img.parentNode) img.remove(); if (img === focusedItem) focusedItem = null; }, clickedItemType === 'stacey' ? 250 : 100);
     }
 
     function updateTimer() {
@@ -631,32 +610,23 @@
         timeLeft = 0; timeDisplay.textContent = timeLeft;
         endGame();
       }
+    }
+
     function toggleBackgroundColor() {
-      if (isFlickerRed) {
-        document.body.style.background = 'rgba(0,0,255,0.2)';
-      } else {
-        document.body.style.background = 'rgba(255,0,0,0.2)';
-      }
+      if (isFlickerRed) document.body.style.background = 'rgba(0,0,255,0.2)';
+      else document.body.style.background = 'rgba(255,0,0,0.2)';
       isFlickerRed = !isFlickerRed;
     }
 
     function startGame() {
+      console.log('Starting game...');
       if (gameOverFlickerTimeout) clearTimeout(gameOverFlickerTimeout);
       if (flickerInterval) clearInterval(flickerInterval);
       document.body.style.background = originalBodyBackground;
       
-      if (gameOverSoundEffect) {
-        gameOverSoundEffect.pause();
-        gameOverSoundEffect.currentTime = 0;
-      }
-      if (jailBarSfx) {
-        jailBarSfx.pause();
-        jailBarSfx.currentTime = 0;
-      }
-      if (jakePenaltySfx) {
-        jakePenaltySfx.pause();
-        jakePenaltySfx.currentTime = 0;
-      }
+      gameOverSoundEffect?.pause(); gameOverSoundEffect && (gameOverSoundEffect.currentTime = 0);
+      jailBarSfx?.pause(); jailBarSfx && (jailBarSfx.currentTime = 0);
+      jakePenaltySfx?.pause(); jakePenaltySfx && (jakePenaltySfx.currentTime = 0);
 
       gameActive = true;
       hitJakeInGameOver = false;
@@ -694,10 +664,9 @@
       
       if (music) {
         music.currentTime = 0;
-        playSound(music);
+        playSound(music); // Triggered by user action, should work on mobile
       }
       
-      // Start flash
       const flash = document.createElement('div');
       flash.id = 'gameStartFlash';
       if (document.getElementById('gameStartFlash')) document.getElementById('gameStartFlash').remove();
@@ -771,7 +740,13 @@
 
     // Keyboard navigation
     document.addEventListener('keydown', (event) => {
-      if (!gameActive) return;
+      if (!gameActive) {
+        if (event.key === ' ' && startButton && !startButton.disabled) {
+          event.preventDefault();
+          startGame();
+        }
+        return;
+      }
       const items = Array.from(gameArea.querySelectorAll('.item-face'));
       if (items.length === 0) return;
       
@@ -785,19 +760,25 @@
         const currentIndex = focusedItem ? items.indexOf(focusedItem) : 0;
         focusedItem = items[(currentIndex - 1 + items.length) % items.length];
         focusedItem.focus();
-      } else if (event.key === 'Space' && !gameActive) {
+      } else if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        startGame();
+        if (focusedItem) handleItemInteraction({ target: focusedItem });
       }
     });
 
     // Event listeners
-    if (startButton) startButton.addEventListener('click', startGame);
+    if (startButton) {
+      startButton.addEventListener('click', () => {
+        console.log('Start button clicked');
+        startGame();
+      });
+    }
     closeInstructionsButton.addEventListener('click', hideInstructions);
     showInstructionsButton.addEventListener('click', showInstructions);
 
     // Initialize
     window.addEventListener('load', () => {
+      console.log('Page loaded');
       loadHighScore();
       if (localStorage.getItem('instructionsShown') !== 'true') {
         showInstructions();
@@ -805,23 +786,26 @@
         if (startButton) startButton.disabled = false;
       }
       
-      // Preload audio
-      [music, staceyClickSound, gameOverSoundEffect, jakePenaltySfx, powerUpSfx, bystanderSfx, comboSfx, jailBarSfx].forEach(sound => {
+      // Preload and test audio
+      const sounds = [music, staceyClickSound, gameOverSoundEffect, jakePenaltySfx, powerUpSfx, bystanderSfx, comboSfx, jailBarSfx];
+      sounds.forEach(sound => {
         if (sound && sound.src && sound.src !== window.location.href) {
           sound.preload = 'auto';
           sound.load();
+          sound.oncanplaythrough = () => console.log(`${sound.id} loaded successfully`);
+          sound.onerror = () => console.error(`${sound.id} failed to load`);
         }
       });
       
       // Set audio volumes
-      if (music) music.volume = 0.3;
-      if (staceyClickSound) staceyClickSound.volume = 1.0;
-      if (gameOverSoundEffect) gameOverSoundEffect.volume = 0.6;
-      if (jakePenaltySfx) jakePenaltySfx.volume = 0.8;
-      if (powerUpSfx) powerUpSfx.volume = 0.8;
-      if (bystanderSfx) bystanderSfx.volume = 0.8;
-      if (comboSfx) comboSfx.volume = 0.8;
-      if (jailBarSfx) jailBarSfx.volume = 0.8;
+      music.volume = 0.3;
+      staceyClickSound.volume = 1.0;
+      gameOverSoundEffect.volume = 0.6;
+      jakePenaltySfx.volume = 0.8;
+      powerUpSfx.volume = 0.8;
+      bystanderSfx.volume = 0.8;
+      comboSfx.volume = 0.8;
+      jailBarSfx.volume = 0.8;
     });
   </script>
 </body>
